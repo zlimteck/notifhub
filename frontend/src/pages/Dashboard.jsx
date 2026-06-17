@@ -461,6 +461,7 @@ export default function Dashboard() {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
   async function load() {
+    setLoading(true);
     try {
       const [ms, h] = await Promise.all([monitorsApi.list(), historyApi.all(24)]);
       setMonitors(ms);
@@ -582,7 +583,11 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {loading && <p className="text-muted text-sm">{t('dashboard.loading')}</p>}
+        {loading && (
+          <div className="flex items-center justify-center" style={{ minHeight: 'calc(100vh - 12rem)' }}>
+            <RefreshCw size={28} className="animate-spin text-muted" />
+          </div>
+        )}
         {!loading && monitors.length === 0 && (
           <div className="card text-center py-10">
             <p className="text-muted text-sm">{t('dashboard.empty')}</p>

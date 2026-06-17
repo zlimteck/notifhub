@@ -27,4 +27,10 @@ router.post('/:id/acknowledge', async (req, res) => {
   res.json(incident);
 });
 
+// DELETE /api/incidents/:id
+router.delete('/:id', async (req, res) => {
+  await Incident.findByIdAndDelete(req.params.id);
+  res.json({ ok: true });
+});
+
 module.exports = router;

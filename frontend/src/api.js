@@ -58,4 +58,5 @@ export const history = {
 export const incidents = {
   list: (params) => api.get('/incidents', { params }).then(r => r.data),
   acknowledge: (id) => api.post(`/incidents/${id}/acknowledge`).then(r => r.data),
+  delete: (id) => api.delete(`/incidents/${id}`).then(r => r.data),
 };

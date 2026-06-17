@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const Monitor = require('../models/Monitor');
+const Incident = require('../models/Incident');
 const { triggerNow } = require('../monitors/runner');
 
 router.get('/', async (req, res) => {
@@ -83,6 +84,7 @@ router.post('/:id/run', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   await Monitor.findByIdAndDelete(req.params.id);
+  await Incident.deleteMany({ monitorId: req.params.id });
   res.json({ ok: true });
 });
 

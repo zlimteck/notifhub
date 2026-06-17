@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { incidents as api } from '../api';
 import { useLang } from '../context/LangContext';
-import { AlertTriangle, CheckCircle, BellOff } from 'lucide-react';
+import { AlertTriangle, CheckCircle, BellOff, Trash2 } from 'lucide-react';
 
 function duration(ms) {
   if (ms == null) return null;
@@ -11,7 +11,7 @@ function duration(ms) {
   return `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}min`;
 }
 
-function IncidentRow({ incident: i, onAcknowledge }) {
+function IncidentRow({ incident: i, onAcknowledge, onDelete }) {
   const { t, lang } = useLang();
   const resolved = !!i.resolvedAt;
   const acknowledged = !!i.acknowledgedAt;
@@ -50,15 +50,24 @@ function IncidentRow({ incident: i, onAcknowledge }) {
           )}
         </div>
       </div>
-      {!resolved && !acknowledged && (
+      <div className="flex items-center gap-1 shrink-0 self-center">
+        {!resolved && !acknowledged && (
+          <button
+            onClick={() => onAcknowledge(i._id)}
+            title={t('incidents.acknowledge')}
+            className="btn-ghost p-2 rounded-lg text-muted hover:text-amber-400 transition-colors"
+          >
+            <BellOff size={14} />
+          </button>
+        )}
         <button
-          onClick={() => onAcknowledge(i._id)}
-          title={t('incidents.acknowledge')}
-          className="shrink-0 btn-ghost p-2 rounded-lg text-muted hover:text-amber-400 transition-colors"
+          onClick={() => onDelete(i._id)}
+          title={t('incidents.delete')}
+          className="p-2 rounded-lg text-muted hover:text-red-400 transition-colors"
         >
-          <BellOff size={14} />
+          <Trash2 size={14} />
         </button>
-      )}
+      </div>
     </div>
   );
 }
@@ -79,6 +88,11 @@ export default function Incidents() {
     load();
   }
 
+  async function handleDelete(id) {
+    await api.delete(id);
+    load();
+  }
+
   const open = data.filter(i => !i.resolvedAt);
   const closed = data.filter(i => i.resolvedAt);
 
@@ -94,14 +108,14 @@ export default function Incidents() {
       {open.length > 0 && (
         <div className="space-y-2">
           <h2 className="text-xs font-semibold text-muted uppercase tracking-wider">{t('incidents.open')}</h2>
-          {open.map(i => <IncidentRow key={i._id} incident={i} onAcknowledge={handleAcknowledge} />)}
+          {open.map(i => <IncidentRow key={i._id} incident={i} onAcknowledge={handleAcknowledge} onDelete={handleDelete} />)}
         </div>
       )}
 
       {closed.length > 0 && (
         <div className="space-y-2">
           <h2 className="text-xs font-semibold text-muted uppercase tracking-wider">{t('incidents.resolved')}</h2>
-          {closed.map(i => <IncidentRow key={i._id} incident={i} onAcknowledge={handleAcknowledge} />)}
+          {closed.map(i => <IncidentRow key={i._id} incident={i} onAcknowledge={handleAcknowledge} onDelete={handleDelete} />)}
         </div>
       )}
 

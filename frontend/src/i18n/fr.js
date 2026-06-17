@@ -165,6 +165,7 @@ export default {
     badge: 'ouvert',
     acknowledge: 'Acquitter',
     acknowledged: 'Acquitté',
+    delete: "Supprimer l'incident",
     start: 'Début',
     resolvedAt: 'Résolu',
     duration: 'Durée',

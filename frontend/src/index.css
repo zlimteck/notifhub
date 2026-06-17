@@ -80,6 +80,7 @@
   }
   .input {
     @apply w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-ink placeholder:text-muted focus:outline-none focus:border-periwinkle transition-colors;
+    font-size: max(16px, 0.875rem); /* prevent iOS Safari zoom on focus */
   }
   .select {
     @apply input appearance-none cursor-pointer pr-8;

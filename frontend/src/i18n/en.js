@@ -165,6 +165,7 @@ export default {
     badge: 'open',
     acknowledge: 'Acknowledge',
     acknowledged: 'Acknowledged',
+    delete: 'Delete incident',
     start: 'Started',
     resolvedAt: 'Resolved',
     duration: 'Duration',

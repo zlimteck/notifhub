@@ -183,6 +183,9 @@ async function checkWeeklyReport() {
 
     if (now < scheduled) return; // not yet this week
 
+    // Only send within a 15-minute window after the scheduled time
+    if (now - scheduled > 15 * 60 * 1000) return;
+
     const last = s.weeklyReport.lastSentAt ? new Date(s.weeklyReport.lastSentAt) : null;
     if (last && last >= scheduled) return; // already sent this week
 
