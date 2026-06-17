@@ -1,6 +1,6 @@
 import React from 'react';
 import { siCloudflare, siAdguard, siSyncthing, siProxmox, siImmich, siPortainer } from 'simple-icons';
-import { Globe, Activity, Terminal } from 'lucide-react';
+import { Globe, Activity, Terminal, HeartPulse } from 'lucide-react';
 
 function SimpleIcon({ icon, size = 20 }) {
   return (
@@ -29,6 +29,14 @@ function HmsIcon({ size = 20 }) {
   );
 }
 
+function DockerIcon({ size = 20 }) {
+  return (
+    <svg viewBox="0 0 24 18" width={size} height={Math.round(size * 18 / 24)} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path fill="#2496ED" d="M13.4 4.5h2.2V2.3h-2.2v2.2zm0 2.7h2.2V5h-2.2v2.2zm-2.7 0h2.2V5h-2.2v2.2zm-2.7 0h2.2V5H8v2.2zm-2.7 0h2.2V5H5.3v2.2zm2.7-2.7h2.2V2.3H8V4.5zm2.7 0h2.2V2.3h-2.2V4.5zm0-2.7h2.2V-.1h-2.2V1.8zm-2.7 0h2.2V-.1H8V1.8zM23.3 8c-.5-.3-1.5-.4-2.3-.3-.1-.8-.6-1.6-1.3-2l-.4-.3-.3.4c-.4.5-.5 1.4-.5 2 0 .3 0 .8.3 1.3-.3.1-.8.3-1.5.3H.2l-.1.4c-.1.9 0 4.3 2 6.1.9.8 2.2 1.2 3.8 1.2 3.7 0 6.4-1.7 7.7-4.8.9 0 2.8.1 3.7-1.9l.2-.3-.4-.3zm-11 4.3H10v2.3h2.3v-2.3zm0-2.8H10v2.3h2.3V9.5zm2.7 2.8h-2.2v2.3h2.2v-2.3zm-2.7-5.5H10v2.2h2.3V6.8zM7.3 12.3H5v2.3h2.3v-2.3zm2.7 0H7.8v2.3H10v-2.3zm0-2.8H7.8v2.3H10V9.5zm-2.7 0H5v2.3h2.3V9.5zm-2.8 0H2.3v2.3h2.2V9.5zm2.8-2.7H5v2.2h2.3V6.8zm2.7 0H7.8v2.2H10V6.8z"/>
+    </svg>
+  );
+}
+
 function UltraccIcon({ size = 20 }) {
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -49,9 +57,11 @@ const FALLBACKS = {
   portainer:  ({ size }) => <SimpleIcon icon={siPortainer}  size={size} />,
   hms:        ({ size }) => <HmsIcon size={size} />,
   ultracc:    ({ size }) => <UltraccIcon size={size} />,
+  docker:     ({ size }) => <DockerIcon size={size} />,
   http:       ({ size }) => <Globe size={size} color="#c9d7f8" />,
   ping:       ({ size }) => <Activity size={size} color="#80cfa9" />,
   ssh:        ({ size }) => <Terminal size={size} color="#a7e2e3" />,
+  heartbeat:  ({ size }) => <HeartPulse size={size} color="#f87171" />,
 };
 
 function FileIcon({ type, size, onError }) {

@@ -15,6 +15,8 @@ const TYPE_DEFAULTS = {
   immich:     { checkInterval: 30, reportInterval: 24, config: { apiUrl: '', apiKey: '', rejectUnauthorized: true } },
   portainer:  { checkInterval: 5,  reportInterval: 0,  config: { apiUrl: '', apiKey: '', rejectUnauthorized: true } },
   ssh:        { checkInterval: 5,  reportInterval: 24, config: { host: '', port: 22, username: '', password: '', privateKey: '' } },
+  heartbeat:  { checkInterval: 5,  reportInterval: 0,  config: { expectedEvery: 60, slug: crypto.randomUUID() } },
+  docker:     { checkInterval: 1,  reportInterval: 0,  config: { socketPath: '/var/run/docker.sock' } },
 };
 
 const TYPE_LABELS = {
@@ -29,6 +31,8 @@ const TYPE_LABELS = {
   immich:     'Immich',
   portainer:  'Portainer',
   ssh:        'SSH',
+  heartbeat:  'Heartbeat',
+  docker:     'Docker',
 };
 
 function Field({ label, value, onChange, placeholder, type = 'text', hint }) {
@@ -47,7 +51,7 @@ function TlsToggle({ config, set, t }) {
     <label className="flex items-center gap-2 cursor-pointer">
       <input type="checkbox" checked={!!config.rejectUnauthorized}
         onChange={e => set('rejectUnauthorized', e.target.checked)}
-        className="w-4 h-4 rounded accent-indigo-500" />
+        className="w-4 h-4 rounded accent-periwinkle" />
       <span className="text-sm text-thistle">{t('form.tlsCert')}</span>
     </label>
   );
@@ -275,6 +279,34 @@ function ConfigFields({ type, config, onChange, t }) {
     </>
   );
 
+  if (type === 'heartbeat') {
+    const pingUrl = `${window.location.origin}/api/ping/${config.slug}`;
+    return (
+      <>
+        <Field label={t('form.fields.heartbeat.expectedEvery')} value={config.expectedEvery}
+          onChange={v => set('expectedEvery', +v)} type="number" placeholder="60"
+          hint={t('form.fields.heartbeat.expectedEveryHint')} />
+        <div className="space-y-1">
+          <label className="label">{t('form.fields.heartbeat.pingUrl')}</label>
+          <div className="flex items-center gap-2">
+            <input readOnly value={pingUrl} className="input text-xs font-mono flex-1 text-muted" />
+            <button type="button" onClick={() => navigator.clipboard.writeText(pingUrl)}
+              className="btn-ghost px-3 py-2 text-xs shrink-0">
+              {t('form.fields.heartbeat.copy')}
+            </button>
+          </div>
+          <p className="text-xs text-muted">{t('form.fields.heartbeat.pingUrlHint')}</p>
+        </div>
+      </>
+    );
+  }
+
+  if (type === 'docker') return (
+    <Field label={t('form.fields.docker.socketPath')} value={config.socketPath}
+      onChange={v => set('socketPath', v)} placeholder="/var/run/docker.sock"
+      hint={t('form.fields.docker.socketPathHint')} />
+  );
+
   return null;
 }
 
@@ -373,7 +405,7 @@ export default function ServiceModal({ monitor, onClose, onSave, error }) {
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" checked={form.enabled}
               onChange={e => setForm(f => ({ ...f, enabled: e.target.checked }))}
-              className="w-4 h-4 rounded accent-indigo-500" />
+              className="w-4 h-4 rounded accent-periwinkle" />
             <span className="text-sm text-thistle">{t('form.enabled')}</span>
           </label>
 

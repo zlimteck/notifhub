@@ -4,7 +4,7 @@ import { useLang } from '../context/LangContext';
 import StatusBadge from '../components/StatusBadge';
 import ServiceIcon from '../components/ServiceIcon';
 import ServiceDetail from '../components/ServiceDetail';
-import { RefreshCw, Radio, AlertTriangle, CheckCircle, Clock, ChevronDown, GripVertical } from 'lucide-react';
+import { RefreshCw, Radio, AlertTriangle, CheckCircle, Clock, GripVertical, Search } from 'lucide-react';
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragOverlay,
 } from '@dnd-kit/core';
@@ -20,42 +20,45 @@ function ProgressBar({ value, warn = 80, danger = 95 }) {
   );
 }
 
+function ScrollList({ items }) {
+  return (
+    <div className="space-y-0.5 max-h-28 overflow-y-auto pr-1">
+      {items.map((item, i) => (
+        <div key={i} className="flex items-center gap-1.5 text-xs">
+          <span className={item.ok ? 'text-celadon' : 'text-red-400'}>●</span>
+          <span className="text-thistle truncate flex-1">{item.name}</span>
+          {item.sub && <span className="text-muted shrink-0">{item.sub}</span>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function CloudflareTunnels({ metrics }) {
   const { t } = useLang();
-  const [expanded, setExpanded] = useState({});
-  const toggle = id => setExpanded(e => ({ ...e, [id]: !e[id] }));
   const tunnels = metrics.tunnels || [];
+  const items = [];
+  for (const t2 of tunnels) {
+    const ok = t2.status === 'active' || t2.status === 'healthy';
+    items.push({ ok, name: t2.name, sub: null });
+    for (const h of (t2.hostnames || [])) {
+      items.push({ ok, name: h, sub: null, indent: true });
+    }
+  }
   return (
-    <div className="space-y-1">
-      <p className="text-xs text-muted">
-        {t('metrics.tunnels')} : <span className="text-thistle font-medium">{metrics.healthy}/{metrics.total}</span> {t('metrics.running')}
-      </p>
-      <div className="max-h-36 overflow-y-auto space-y-0.5 pr-1">
-        {tunnels.map(t2 => {
-          const ok = t2.status === 'active' || t2.status === 'healthy';
-          const hosts = t2.hostnames || [];
-          const open = expanded[t2.id];
-          return (
-            <div key={t2.id}>
-              <button
-                onClick={e => { e.stopPropagation(); hosts.length && toggle(t2.id); }}
-                className={`flex items-center gap-1.5 text-xs w-full text-left ${hosts.length ? 'cursor-pointer hover:opacity-80' : 'cursor-default'}`}
-              >
-                <span className={ok ? 'text-celadon' : 'text-red-400'}>●</span>
-                <span className="text-thistle font-medium flex-1 truncate">{t2.name}</span>
-                {hosts.length > 0 && (
-                  <span className="text-muted shrink-0 flex items-center gap-0.5">
-                    <span>{hosts.length}</span>
-                    <ChevronDown size={10} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
-                  </span>
-                )}
-              </button>
-              {open && hosts.map(h => (
-                <p key={h} className="text-xs text-muted pl-4 truncate">└ {h}</p>
-              ))}
-            </div>
-          );
-        })}
+    <div className="space-y-1.5">
+      <div className="flex gap-4 text-xs text-muted">
+        <span>{t('metrics.tunnels')} : <span className="text-thistle font-medium">{metrics.healthy}/{metrics.total}</span></span>
+      </div>
+      <div className="space-y-0.5 max-h-28 overflow-y-auto pr-1">
+        {items.map((item, i) => (
+          <div key={i} className={`flex items-center gap-1.5 text-xs ${item.indent ? 'pl-3' : ''}`}>
+            <span className={item.indent ? 'text-muted/50' : (item.ok ? 'text-celadon' : 'text-red-400')}>
+              {item.indent ? '└' : '●'}
+            </span>
+            <span className={item.indent ? 'text-muted truncate' : 'text-thistle truncate'}>{item.name}</span>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -219,10 +222,19 @@ function MetricsBlock({ monitor }) {
   );
 
   if (type === 'portainer') return (
-    <div className="flex gap-4 text-xs text-muted">
-      <span>{t('metrics.envs')} <span className="text-thistle font-medium">{metrics.environments}</span></span>
-      <span><span className="text-celadon font-medium">{metrics.containersRunning}</span> {t('metrics.running')}</span>
-      <span><span className="text-muted font-medium">{metrics.containersStopped}</span> {t('metrics.stopped')}</span>
+    <div className="space-y-1.5">
+      <div className="flex gap-4 text-xs text-muted">
+        <span>{t('metrics.envs')} <span className="text-thistle font-medium">{metrics.environments}</span></span>
+        <span><span className="text-celadon font-medium">{metrics.containersRunning}</span> {t('metrics.running')}</span>
+        <span><span className={metrics.containersStopped > 0 ? 'text-amber-400 font-medium' : 'text-muted font-medium'}>{metrics.containersStopped}</span> {t('metrics.stopped')}</span>
+      </div>
+      {(metrics.containers || []).length > 0 && (
+        <ScrollList items={(metrics.containers || []).map(c => ({
+          ok: c.state === 'running',
+          name: c.name,
+          sub: c.state !== 'running' ? c.state : null,
+        }))} />
+      )}
     </div>
   );
 
@@ -238,7 +250,42 @@ function MetricsBlock({ monitor }) {
     </div>
   );
 
+  if (type === 'docker') return (
+    <div className="space-y-1.5">
+      <div className="flex gap-4 text-xs text-muted">
+        <span><span className="text-celadon font-medium">{metrics.containersRunning}</span> {t('metrics.running')}</span>
+        <span><span className={metrics.containersStopped > 0 ? 'text-amber-400 font-medium' : 'text-muted font-medium'}>{metrics.containersStopped}</span> {t('metrics.stopped')}</span>
+      </div>
+      <div className="space-y-0.5 max-h-28 overflow-y-auto pr-1">
+        {(metrics.containers || []).map(c => (
+          <div key={c.id} className="flex items-center gap-1.5 text-xs">
+            <span className={c.state === 'running' ? 'text-celadon' : 'text-amber-400'}>●</span>
+            <span className="text-thistle truncate flex-1">{c.name}</span>
+            {c.state !== 'running' && <span className="text-muted shrink-0">{c.state}</span>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  if (type === 'heartbeat') return (
+    <div className="space-y-0.5 text-xs text-muted">
+      {metrics.lastPing
+        ? <span>{t('metrics.lastPing')} : <span className="text-thistle">{timeAgoMs(metrics.lastPing)}</span></span>
+        : <span className="italic">{t('metrics.noHeartbeat')}</span>
+      }
+      <div><span>{t('metrics.expectedEvery')} : <span className="text-frosted">{metrics.expectedEvery} min</span></span></div>
+    </div>
+  );
+
   return null;
+}
+
+function timeAgoMs(date) {
+  const s = Math.floor((Date.now() - new Date(date)) / 1000);
+  if (s < 60) return `${s}s`;
+  if (s < 3600) return `${Math.floor(s / 60)}min`;
+  return `${Math.floor(s / 3600)}h`;
 }
 
 function timeAgo(date, t) {
@@ -314,6 +361,7 @@ export default function Dashboard() {
   const [selected, setSelected] = useState(null);
   const [sortMode, setSortMode] = useState('status');
   const [activeId, setActiveId] = useState(null);
+  const [search, setSearch] = useState('');
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
@@ -338,15 +386,21 @@ export default function Dashboard() {
     return monitors;
   }, [monitors, sortMode]);
 
+  const filtered = useMemo(() => {
+    if (!search.trim()) return sorted;
+    const q = search.toLowerCase();
+    return sorted.filter(m => m.name.toLowerCase().includes(q) || m.category?.toLowerCase().includes(q));
+  }, [sorted, search]);
+
   const groups = useMemo(() => {
     const map = new Map();
-    sorted.forEach(m => {
+    filtered.forEach(m => {
       const cat = m.category?.trim() || '';
       if (!map.has(cat)) map.set(cat, []);
       map.get(cat).push(m);
     });
     return map;
-  }, [sorted]);
+  }, [filtered]);
 
   const hasCategories = useMemo(() => monitors.some(m => m.category?.trim()), [monitors]);
 
@@ -403,12 +457,19 @@ export default function Dashboard() {
       </div>
 
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xs font-semibold text-muted uppercase tracking-wider">{t('dashboard.section')}</h2>
-          <div className="flex gap-1">
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1">
+            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+            <input
+              value={search} onChange={e => setSearch(e.target.value)}
+              placeholder={t('dashboard.search')}
+              className="input pl-8 text-sm w-full h-8"
+            />
+          </div>
+          <div className="flex gap-1 shrink-0">
             {['manual', 'status', 'name'].map(mode => (
               <button key={mode} onClick={() => setSortMode(mode)}
-                className={`text-xs px-2.5 py-1 rounded-lg border transition-colors ${
+                className={`text-xs px-2.5 h-8 rounded-lg border transition-colors ${
                   sortMode === mode
                     ? 'bg-periwinkle/20 text-periwinkle border-periwinkle/30'
                     : 'text-muted border-border hover:text-thistle hover:border-granite'

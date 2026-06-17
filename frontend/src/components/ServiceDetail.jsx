@@ -92,9 +92,9 @@ export default function ServiceDetail({ monitor, onClose }) {
               <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">
                 {metricLabel}
               </p>
-              <div className="bg-surface rounded-lg px-2 py-3">
-                <Sparkline points={hist.points} color={sparkColor} height={56} />
-                <div className="flex justify-between text-xs text-muted mt-1 px-1">
+              <div className="bg-surface rounded-lg px-3 pt-3 pb-2">
+                <Sparkline points={hist.points} color={sparkColor} height={90} showLabels />
+                <div className="flex justify-between text-xs text-muted mt-1">
                   <span>{period === 24 ? '−24h' : period === 168 ? `−${t('modal.period7d')}` : `−${period}h`}</span>
                   <span>{t('modal.now')}</span>
                 </div>

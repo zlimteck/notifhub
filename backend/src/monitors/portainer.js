@@ -37,19 +37,35 @@ throw new Error(`URL incorrecte (HTML reçu, status ${endpointsRes.status}) — 
 
     let containersRunning = 0;
     let containersStopped = 0;
+    const containerList = [];
 
     for (const ep of endpoints.slice(0, 5)) {
+      const epId = ep.Id ?? ep.id;
+      const epName = ep.Name ?? ep.name ?? `env-${epId}`;
       try {
-        const res = await http.get(`${base}/api/endpoints/${ep.Id}/docker/containers/json?all=1`);
-        const containers = res.data || [];
-        containersRunning += containers.filter(c => c.State === 'running').length;
-        containersStopped += containers.filter(c => c.State !== 'running').length;
-      } catch {}
+        const res = await http.get(`${base}/api/endpoints/${epId}/docker/containers/json`, {
+          params: { all: true },
+        });
+        let containers = res.data;
+        // Portainer peut retourner { value: [...] } ou un tableau direct
+        if (!Array.isArray(containers)) containers = containers?.value || [];
+
+        for (const c of containers) {
+          const state = c.State ?? c.status ?? 'unknown';
+          const name  = (c.Names?.[0] ?? c.name ?? '').replace(/^\//, '') || c.Id?.slice(0, 12) || '?';
+          if (state === 'running') containersRunning++;
+          else containersStopped++;
+          containerList.push({ name, state, env: epName });
+        }
+        console.log(`[Portainer] env=${epName} — ${containers.length} containers`);
+      } catch (err) {
+        console.warn(`[Portainer] env=${epName} containers error:`, err.message);
+      }
     }
 
-    const state = { environments: endpoints.length, containersRunning, containersStopped };
-    const metrics = { environments: endpoints.length, containersRunning, containersStopped };
-    const status = containersRunning > 0 || endpoints.length > 0 ? 'online' : 'warning';
+    const state = { environments: endpoints.length, containersRunning, containersStopped, containers: containerList };
+    const metrics = { environments: endpoints.length, containersRunning, containersStopped, containers: containerList };
+    const status = endpoints.length > 0 ? 'online' : 'warning';
 
     return { status, state, metrics, notifications: [] };
   } catch (err) {

@@ -10,6 +10,7 @@ export default {
     sortManual: 'Manuel',
     sortStatus: 'Statut',
     sortName: 'Nom',
+    search: 'Rechercher…',
     stats: {
       total: 'Total',
       online: 'En ligne',
@@ -47,6 +48,9 @@ export default {
     tunnels: 'Tunnels',
     used: 'utilisés',
     sslExpired: 'Expiré',
+    lastPing: 'Dernier ping',
+    noHeartbeat: 'Aucun ping reçu',
+    expectedEvery: 'Attendu toutes les',
   },
   nav: {
     dashboard: 'Dashboard',
@@ -100,6 +104,14 @@ export default {
     docker: {
       title: 'Services Docker',
       internal: 'interne',
+    },
+    weeklyReport: {
+      title: 'Rapport hebdomadaire',
+      hint: 'Envoie un résumé Apprise chaque semaine avec les services en erreur et l\'uptime moyen.',
+      enable: 'Activer le rapport hebdomadaire',
+      day: 'Jour',
+      hour: 'Heure (UTC)',
+      days: ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'],
     },
   },
   api: {
@@ -268,6 +280,13 @@ export default {
         port: 'Port TCP',
         attempts: 'Tentatives',
       },
+      heartbeat: {
+        expectedEvery: 'Attendu toutes les (minutes)',
+        expectedEveryHint: 'Alerte si aucun ping reçu dans 1.5× cet intervalle.',
+        pingUrl: 'URL de ping',
+        pingUrlHint: 'Appelez cette URL à la fin de votre cron job ou script.',
+        copy: 'Copier',
+      },
       proxmox: {
         tokenHint: 'Format : user@realm!tokenid=secret',
         node: 'Nœud',
@@ -277,6 +296,10 @@ export default {
       },
       portainer: {
         apiKeyHint: 'Générée dans Portainer > Paramètres > Clés API',
+      },
+      docker: {
+        socketPath: 'Chemin du socket',
+        socketPathHint: 'Montez /var/run/docker.sock dans le container pour utiliser le chemin par défaut.',
       },
       ssh: {
         user: 'Utilisateur',
@@ -315,6 +338,7 @@ export default {
       portainer:  'Containers actifs',
       syncthing:  'Dossiers synchronisés',
       hms:        'VPS actifs',
+      docker:     'Containers actifs',
     },
   },
 };

@@ -10,6 +10,7 @@ export default {
     sortManual: 'Manual',
     sortStatus: 'Status',
     sortName: 'Name',
+    search: 'Search…',
     stats: {
       total: 'Total',
       online: 'Online',
@@ -47,6 +48,9 @@ export default {
     tunnels: 'Tunnels',
     used: 'used',
     sslExpired: 'Expired',
+    lastPing: 'Last ping',
+    noHeartbeat: 'No ping received yet',
+    expectedEvery: 'Expected every',
   },
   nav: {
     dashboard: 'Dashboard',
@@ -100,6 +104,14 @@ export default {
     docker: {
       title: 'Docker services',
       internal: 'internal',
+    },
+    weeklyReport: {
+      title: 'Weekly report',
+      hint: 'Sends an Apprise summary every week with services in error and average uptime.',
+      enable: 'Enable weekly report',
+      day: 'Day',
+      hour: 'Time (UTC hour)',
+      days: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
     },
   },
   api: {
@@ -268,6 +280,13 @@ export default {
         port: 'TCP Port',
         attempts: 'Attempts',
       },
+      heartbeat: {
+        expectedEvery: 'Expected every (minutes)',
+        expectedEveryHint: 'Alert if no ping is received within 1.5× this interval.',
+        pingUrl: 'Ping URL',
+        pingUrlHint: 'Call this URL at the end of your cron job or script.',
+        copy: 'Copy',
+      },
       proxmox: {
         tokenHint: 'Format: user@realm!tokenid=secret',
         node: 'Node',
@@ -277,6 +296,10 @@ export default {
       },
       portainer: {
         apiKeyHint: 'Generated in Portainer > Settings > API Keys',
+      },
+      docker: {
+        socketPath: 'Socket path',
+        socketPathHint: 'Mount /var/run/docker.sock in the container to use the default path.',
       },
       ssh: {
         user: 'Username',
@@ -315,6 +338,7 @@ export default {
       portainer:  'Active containers',
       syncthing:  'Synced folders',
       hms:        'Active VPS',
+      docker:     'Running containers',
     },
   },
 };

@@ -45,7 +45,7 @@ function UserFooter({ onLogout }) {
 }
 
 function SidebarHeader() {
-  const { theme, toggle } = useTheme();
+  const { theme, toggle, auto, enableAuto } = useTheme();
   const { lang, switchLang, t } = useLang();
   return (
     <div className="px-5 py-4 border-b border-border">
@@ -56,8 +56,12 @@ function SidebarHeader() {
       <p className="text-xs text-muted mt-1">{t('nav.subtitle')}</p>
       <div className="flex items-center justify-center gap-2 mt-2.5">
         <button onClick={toggle} title={theme === 'dark' ? 'Light theme' : 'Dark theme'}
-          className="p-2 rounded-lg text-muted hover:text-thistle hover:bg-granite-3 transition-colors">
+          className={`p-2 rounded-lg hover:text-thistle hover:bg-granite-3 transition-colors ${auto ? 'text-muted/40' : 'text-muted'}`}>
           {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+        </button>
+        <button onClick={enableAuto} title="Auto (system theme)"
+          className={`text-xs px-1.5 py-1 rounded-lg transition-colors font-medium ${auto ? 'text-periwinkle bg-periwinkle/10' : 'text-muted hover:text-thistle hover:bg-granite-3'}`}>
+          Auto
         </button>
         <div className="w-px h-4 bg-border" />
         <button onClick={() => switchLang(lang === 'fr' ? 'en' : 'fr')}

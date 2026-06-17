@@ -12,10 +12,16 @@ router.get('/', async (req, res) => {
 });
 
 router.put('/', async (req, res) => {
-  const { appriseUrls, appriseApiUrl } = req.body;
+  const { appriseUrls, appriseApiUrl, weeklyReport } = req.body;
+  const update = { appriseUrls, appriseApiUrl };
+  if (weeklyReport !== undefined) {
+    update['weeklyReport.enabled']   = weeklyReport.enabled   ?? false;
+    update['weeklyReport.dayOfWeek'] = weeklyReport.dayOfWeek ?? 1;
+    update['weeklyReport.hour']      = weeklyReport.hour      ?? 8;
+  }
   const s = await Settings.findOneAndUpdate(
     { key: 'global' },
-    { appriseUrls, appriseApiUrl },
+    update,
     { upsert: true, new: true }
   );
   res.json(s);

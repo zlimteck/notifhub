@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { settings as api, auth as authApi } from '../api';
-import { Save, Send, Info, KeyRound } from 'lucide-react';
+import { Save, Send, Info, KeyRound, CalendarClock } from 'lucide-react';
 import { useLang } from '../context/LangContext';
 
 const EXAMPLES = [
@@ -59,7 +59,7 @@ function ChangePassword() {
 
 export default function Settings() {
   const { t } = useLang();
-  const [form, setForm] = useState({ appriseUrls: [], appriseApiUrl: 'http://apprise:8000' });
+  const [form, setForm] = useState({ appriseUrls: [], appriseApiUrl: 'http://apprise:8000', weeklyReport: { enabled: false, dayOfWeek: 1, hour: 8 } });
   const [urlsText, setUrlsText] = useState('');
   const [saved, setSaved] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -69,7 +69,11 @@ export default function Settings() {
   useEffect(() => {
     api.get()
       .then(s => {
-        setForm({ appriseUrls: s.appriseUrls || [], appriseApiUrl: s.appriseApiUrl || 'http://apprise:8000' });
+        setForm({
+          appriseUrls: s.appriseUrls || [],
+          appriseApiUrl: s.appriseApiUrl || 'http://apprise:8000',
+          weeklyReport: s.weeklyReport || { enabled: false, dayOfWeek: 1, hour: 8 },
+        });
         setUrlsText((s.appriseUrls || []).join('\n'));
       })
       .catch(() => {})
@@ -79,7 +83,7 @@ export default function Settings() {
   async function handleSave(e) {
     e.preventDefault();
     const appriseUrls = urlsText.split('\n').map(u => u.trim()).filter(Boolean);
-    await api.save({ appriseUrls, appriseApiUrl: form.appriseApiUrl });
+    await api.save({ appriseUrls, appriseApiUrl: form.appriseApiUrl, weeklyReport: form.weeklyReport });
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   }
@@ -157,10 +161,6 @@ export default function Settings() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3 pt-1">
-            <button type="submit" className="btn-primary">
-              <Save size={14} />
-              {saved ? t('settings.saved') : t('settings.save')}
-            </button>
             <button type="button" onClick={handleTest} disabled={testing} className="btn-primary">
               <Send size={14} className={testing ? 'animate-pulse' : ''} />
               {testing ? t('settings.testing') : t('settings.test')}
@@ -169,6 +169,45 @@ export default function Settings() {
             {testResult === 'no_urls' && <p className="text-sm text-amber-400">{t('settings.testNoUrls')}</p>}
             {testResult === 'error'   && <p className="text-sm text-red-400">{t('settings.testError')}</p>}
           </div>
+        </div>
+
+        <div className="card space-y-4">
+          <h2 className="font-semibold text-thistle text-sm flex items-center gap-2">
+            <CalendarClock size={14} className="text-periwinkle" /> {t('settings.weeklyReport.title')}
+          </h2>
+          <p className="text-xs text-muted">{t('settings.weeklyReport.hint')}</p>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" className="w-4 h-4 rounded accent-periwinkle"
+              checked={form.weeklyReport?.enabled || false}
+              onChange={e => setForm(f => ({ ...f, weeklyReport: { ...(f.weeklyReport || {}), enabled: e.target.checked } }))} />
+            <span className="text-sm text-thistle">{t('settings.weeklyReport.enable')}</span>
+          </label>
+          {form.weeklyReport?.enabled && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="label">{t('settings.weeklyReport.day')}</label>
+                <select className="input" value={form.weeklyReport?.dayOfWeek ?? 1}
+                  onChange={e => setForm(f => ({ ...f, weeklyReport: { ...(f.weeklyReport || {}), dayOfWeek: +e.target.value } }))}>
+                  {(t('settings.weeklyReport.days') || []).map((d, i) => (
+                    <option key={i} value={i}>{d}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="label">{t('settings.weeklyReport.hour')}</label>
+                <input type="number" min="0" max="23" className="input"
+                  value={form.weeklyReport?.hour ?? 8}
+                  onChange={e => setForm(f => ({ ...f, weeklyReport: { ...(f.weeklyReport || {}), hour: +e.target.value } }))} />
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button type="submit" className="btn-primary">
+            <Save size={14} />
+            {saved ? t('settings.saved') : t('settings.save')}
+          </button>
         </div>
       </form>
 
