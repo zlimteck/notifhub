@@ -368,7 +368,7 @@ export default function ServiceModal({ monitor, onClose, onSave }) {
   const [form, setForm] = useState({
     name: '', type: 'cloudflare', description: '', category: '',
     enabled: true, checkInterval: 1, reportInterval: 6,
-    cardMetric: null, serviceUrl: '',
+    cardMetric: null, serviceUrl: '', showOnStatusPage: true,
     config: TYPE_DEFAULTS.cloudflare.config,
   });
 
@@ -384,6 +384,7 @@ export default function ServiceModal({ monitor, onClose, onSave }) {
         reportInterval: monitor.reportInterval,
         cardMetric: monitor.cardMetric || null,
         serviceUrl: monitor.serviceUrl || '',
+        showOnStatusPage: monitor.showOnStatusPage !== false,
         config: monitor.config || {},
       });
     }
@@ -466,6 +467,13 @@ export default function ServiceModal({ monitor, onClose, onSave }) {
               onChange={e => setForm(f => ({ ...f, enabled: e.target.checked }))}
               className="w-4 h-4 rounded accent-periwinkle" />
             <span className="text-sm text-thistle">{t('form.enabled')}</span>
+          </label>
+
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={form.showOnStatusPage !== false}
+              onChange={e => setForm(f => ({ ...f, showOnStatusPage: e.target.checked }))}
+              className="w-4 h-4 rounded accent-periwinkle" />
+            <span className="text-sm text-thistle">{t('form.showOnStatusPage')}</span>
           </label>
 
           {getMetrics(form.type).length > 0 && (

@@ -33,8 +33,9 @@ function buildSections(t) {
         { method: 'GET',    path: '/api/monitors/portainer',  descKey: 'monitorsByType' },
         { method: 'GET',    path: '/api/monitors/ssh',        descKey: 'monitorsByType' },
         { method: 'GET',    path: '/api/monitors/heartbeat',  descKey: 'monitorsByType' },
-        { method: 'GET',    path: '/api/monitors/docker',     descKey: 'monitorsByType' },
-        { method: 'GET',    path: '/api/monitors/unraid',     descKey: 'monitorsByType' },
+        { method: 'GET',    path: '/api/monitors/docker',      descKey: 'monitorsByType' },
+        { method: 'GET',    path: '/api/monitors/unraid',      descKey: 'monitorsByType' },
+        { method: 'GET',    path: '/api/monitors/speedtest',   descKey: 'monitorsByType' },
         { method: 'POST',   path: '/api/monitors',            descKey: 'monitorsCreate' },
         { method: 'PUT',    path: '/api/monitors/:id',        descKey: 'monitorsUpdate' },
         { method: 'PATCH',  path: '/api/monitors/:id/toggle', descKey: 'monitorsToggle' },
@@ -44,6 +45,12 @@ function buildSections(t) {
         { method: 'GET',    path: '/api/ping/:slug',          descKey: 'heartbeatPing' },
         { method: 'GET',    path: '/api/incidents',           descKey: 'incidentsList' },
         { method: 'GET',    path: '/api/history/:monitorId',  descKey: 'historyGet', params: '?limit=100' },
+      ],
+    },
+    {
+      key: 'public',
+      routes: [
+        { method: 'GET', path: '/api/public/status', descKey: 'publicStatus' },
       ],
     },
     {

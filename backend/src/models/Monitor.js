@@ -19,6 +19,7 @@ const monitorSchema = new mongoose.Schema({
   maintenanceUntil: { type: Date, default: null },
   cardMetric: { type: String, default: null },
   serviceUrl: { type: String, default: '' },
+  showOnStatusPage: { type: Boolean, default: true },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Monitor', monitorSchema);

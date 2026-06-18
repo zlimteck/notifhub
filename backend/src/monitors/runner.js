@@ -120,7 +120,7 @@ async function runReport(monitor) {
   console.log(`[Runner] Rapport: ${monitor.name}`);
 
   try {
-    const { title, message } = await handler.report(monitor.config, monitor.lastState);
+    const { title, message } = await handler.report(monitor.config, monitor.metrics ?? monitor.lastState);
     await sendNotification({ title, message, level: 'info', type: 'report', monitorId: monitor._id, monitorName: monitor.name });
     await Monitor.findByIdAndUpdate(monitor._id, { lastReported: new Date() });
   } catch (err) {

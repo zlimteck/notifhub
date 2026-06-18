@@ -13,6 +13,7 @@ import Incidents from './pages/Incidents';
 import Settings from './pages/Settings';
 import ApiDocs from './pages/ApiDocs';
 import Login from './pages/Login';
+import StatusPage from './pages/StatusPage';
 
 function AuthGuard() {
   const { token, loading } = useAuth();
@@ -36,6 +37,7 @@ export default function App() {
     <AuthProvider>
     <ToastProvider>
       <Routes>
+        <Route path="/status" element={<StatusPage />} />
         <Route path="/login" element={<LoginGuard />} />
         <Route element={<AuthGuard />}>
           <Route element={<Layout />}>

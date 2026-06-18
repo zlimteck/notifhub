@@ -66,3 +66,7 @@ export const incidents = {
 export const stats = {
   get: () => api.get('/stats').then(r => r.data),
 };
+
+export const publicStatus = {
+  get: () => axios.get('/api/public/status').then(r => r.data),
+};

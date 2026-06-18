@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { settings as api, auth as authApi } from '../api';
-import { Save, Send, Info, KeyRound, CalendarClock, BarChart2 } from 'lucide-react';
+import { Save, Send, Info, KeyRound, CalendarClock, BarChart2, Globe } from 'lucide-react';
 import { useLang } from '../context/LangContext';
 import { useToast } from '../context/ToastContext';
 
@@ -55,7 +55,7 @@ function ChangePassword() {
 export default function Settings() {
   const { t } = useLang();
   const toast = useToast();
-  const [form, setForm] = useState({ appriseUrls: [], appriseApiUrl: 'http://apprise:8000', weeklyReport: { enabled: false, dayOfWeek: 1, hour: 8 }, showGraphs: true });
+  const [form, setForm] = useState({ appriseUrls: [], appriseApiUrl: 'http://apprise:8000', weeklyReport: { enabled: false, dayOfWeek: 1, hour: 8 }, showGraphs: true, statusPage: { title: '' } });
   const [urlsText, setUrlsText] = useState('');
   const [testing, setTesting] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -68,6 +68,7 @@ export default function Settings() {
           appriseApiUrl: s.appriseApiUrl || 'http://apprise:8000',
           weeklyReport: s.weeklyReport || { enabled: false, dayOfWeek: 1, hour: 8 },
           showGraphs: s.showGraphs !== false,
+          statusPage: s.statusPage || { title: '' },
         });
         setUrlsText((s.appriseUrls || []).join('\n'));
       })
@@ -82,6 +83,7 @@ export default function Settings() {
       appriseApiUrl: form.appriseApiUrl,
       weeklyReport: form.weeklyReport,
       showGraphs: form.showGraphs,
+      statusPage: form.statusPage,
       ...patch,
     });
     toast.add(t('settings.saved'), 'success');
@@ -234,6 +236,30 @@ export default function Settings() {
           <span className="text-sm text-thistle">{t('settings.display.showGraphs')}</span>
         </label>
       </div>
+
+      <form onSubmit={e => { e.preventDefault(); saveAll(); }} className="card space-y-4">
+        <h2 className="font-semibold text-thistle text-sm flex items-center gap-2">
+          <Globe size={14} className="text-periwinkle" /> {t('settings.statusPage.title')}
+        </h2>
+        <p className="text-xs text-muted">{t('settings.statusPage.hint')}</p>
+        <div>
+          <label className="label">{t('settings.statusPage.pageTitle')}</label>
+          <input className="input" value={form.statusPage?.title || ''}
+            placeholder="System Status"
+            onChange={e => setForm(f => ({ ...f, statusPage: { ...f.statusPage, title: e.target.value } }))} />
+        </div>
+        <div className="bg-granite-3/60 border border-border rounded-xl px-3 py-2 flex items-center gap-2 text-xs">
+          <Globe size={12} className="text-muted shrink-0" />
+          <span className="text-muted">{t('settings.statusPage.url')} :</span>
+          <a href="/status" target="_blank" rel="noreferrer"
+            className="text-periwinkle hover:underline font-mono">
+            {window.location.origin}/status
+          </a>
+        </div>
+        <button type="submit" className="btn-primary">
+          <Save size={14} /> {t('settings.save')}
+        </button>
+      </form>
 
       <ChangePassword />
 

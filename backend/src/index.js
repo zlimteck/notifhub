@@ -18,6 +18,7 @@ app.use(express.static(publicDir));
 app.use('/api/auth',   require('./routes/auth'));
 app.use('/api/ping',   require('./routes/ping'));
 app.use('/api/events', require('./routes/sse'));
+app.use('/api/public', require('./routes/public'));
 app.get('/api/health', (req, res) => res.json({ ok: true, ts: new Date() }));
 
 // Protected API routes

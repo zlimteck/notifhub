@@ -11,6 +11,9 @@ const settingsSchema = new mongoose.Schema({
     lastSentAt: { type: Date, default: null },
   },
   showGraphs: { type: Boolean, default: true },
+  statusPage: {
+    title: { type: String, default: '' },
+  },
 });
 
 module.exports = mongoose.model('Settings', settingsSchema);

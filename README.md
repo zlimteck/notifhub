@@ -1,19 +1,36 @@
-# NotifHub
+<div align="center">
+  <img src="docs/logo.svg" alt="NotifHub" width="80" />
+  <h1>NotifHub</h1>
+  <p>Unified monitoring dashboard with notifications via <a href="https://github.com/caronc/apprise/wiki">Apprise</a>.<br>Monitor your self-hosted services, get alerted on incidents, and send notifications to any channel.</p>
 
-Unified monitoring dashboard with notifications via [Apprise](https://github.com/caronc/apprise/wiki). Monitor your self-hosted services, get alerted on incidents, and send notifications to any channel.
+  [![Image Size](https://img.shields.io/docker/image-size/zlimteck/notifhub/latest?style=flat-square&logo=docker&logoColor=white&color=2496ED)](https://hub.docker.com/r/zlimteck/notifhub)
+  [![CI](https://img.shields.io/github/actions/workflow/status/zlimteck/notifhub/docker.yml?style=flat-square&logo=github-actions&logoColor=white&label=build)](https://github.com/zlimteck/notifhub/actions/workflows/docker.yml)
+  [![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
+  [![Platform](https://img.shields.io/badge/platform-amd64%20%7C%20arm64-lightgrey?style=flat-square)](https://hub.docker.com/r/zlimteck/notifhub)
+</div>
 
-![Dashboard](docs/screenshots/01-Dashboard.png)
+## Screenshots
 
-![New service](docs/screenshots/02-NewService.png)
+| | |
+|---|---|
+| ![Dashboard](docs/screenshots/01-Dashboard.png) | ![Services](docs/screenshots/02-Services.png) |
+| ![Notifications](docs/screenshots/03-Notications.png) | ![New service](docs/screenshots/04-NewServices.png) |
+| ![Incidents](docs/screenshots/05-Incidents.png) | ![Statistics](docs/screenshots/06-Statistiques.png) |
+| ![Settings](docs/screenshots/07-Settings.png) | ![API](docs/screenshots/08-Api.png) |
+| ![Public status page](docs/screenshots/09-PublicStatusPage.png) | |
 
 ## Features
 
 - **Unified dashboard** — status overview of all your services at a glance, grid or list view
-- **14 monitor types** — HTTP/HTTPS, Ping/TCP, SSH, Proxmox, Cloudflare, AdGuard, Portainer, Docker, Syncthing, Immich, HostMyServers, Ultra.cc, Heartbeat, Unraid
+- **15 monitor types** — HTTP/HTTPS, Ping/TCP, SSH, Proxmox, Cloudflare, AdGuard, Portainer, Docker, Syncthing, Immich, HostMyServers, Ultra.cc, Heartbeat, Unraid, Speedtest Tracker
+- **Public status page** — shareable `/status` page (no login required) with uptime bars, open incidents, and 90-day history per service; toggle visibility per service
 - **Search & sort** — filter cards by name, sort by status / name / manual order
 - **Drag & drop reordering** — manually reorder cards in grid view
 - **Category grouping** — assign a category to each service to group cards on the dashboard
 - **Incident tracking** — automatic incident open/close with duration history
+- **Maintenance windows** — per-service maintenance mode (30 min to 8 h presets or custom) — no alerts or incidents during the window
+- **Statistics** — 30-day global view: uptime per service, incident count, average duration, notifications sent
+- **Metric graphs** — optional sparkline graphs on dashboard cards (toggle in settings)
 - **Apprise notifications** — Pushover, Telegram, Discord, Slack, email, and [100+ more](https://github.com/caronc/apprise/wiki)
 - **Weekly report** — optional weekly Apprise summary (services in error, average uptime)
 - **Manual notifications** — send a message to all channels directly from the UI
@@ -69,6 +86,7 @@ Default credentials: `admin` / `notifhub`
 | **HMS (HostMyServers)** | VPS status and specs via API token |
 | **Ultra.cc** | Seedbox storage and traffic via Stats API URL |
 | **Unraid** | Array state, disk usage, CPU / RAM, temperature via GraphQL API |
+| **Speedtest Tracker** | Latest speedtest result — download, upload, ping, jitter |
 
 ## Alerts sent per monitor type
 
