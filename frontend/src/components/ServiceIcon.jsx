@@ -112,8 +112,13 @@ export default function ServiceIcon({ type, size = 20, url, faviconUrl, serviceU
   const [useFallback, setUseFallback] = React.useState(false);
   const Fallback = FALLBACKS[type];
 
+  // If the type has a dedicated icon, only use a favicon when the backend has
+  // already fetched and cached one (faviconUrl stored in metrics). Never attempt
+  // a live browser fetch for these types — their endpoints require auth or lack
+  // a public favicon.ico, which would produce 401/404 console errors.
   const faviconSrc = (() => {
     if (faviconUrl) return faviconUrl;
+    if (Fallback) return null;
     for (const base of [serviceUrl, url]) {
       if (!base) continue;
       try { return `${new URL(base).origin}/favicon.ico`; } catch {}

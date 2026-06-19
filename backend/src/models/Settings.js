@@ -14,6 +14,7 @@ const settingsSchema = new mongoose.Schema({
   statusPage: {
     title: { type: String, default: '' },
   },
+  mcpApiKey: { type: String, default: () => require('crypto').randomBytes(24).toString('hex') },
 });
 
 module.exports = mongoose.model('Settings', settingsSchema);

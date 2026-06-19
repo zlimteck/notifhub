@@ -3,11 +3,15 @@ const Settings = require('../models/Settings');
 const { sendNotification } = require('../services/notifier');
 
 router.get('/', async (req, res) => {
-  const s = await Settings.findOneAndUpdate(
+  let s = await Settings.findOneAndUpdate(
     { key: 'global' },
     { $setOnInsert: { key: 'global' } },
     { upsert: true, new: true }
   );
+  if (!s.mcpApiKey) {
+    const mcpApiKey = require('crypto').randomBytes(24).toString('hex');
+    s = await Settings.findOneAndUpdate({ key: 'global' }, { $set: { mcpApiKey } }, { new: true });
+  }
   res.json(s);
 });
 
@@ -27,6 +31,16 @@ router.put('/', async (req, res) => {
     { upsert: true, new: true }
   );
   res.json(s);
+});
+
+router.post('/mcp/regenerate', async (req, res) => {
+  const mcpApiKey = require('crypto').randomBytes(24).toString('hex');
+  const s = await Settings.findOneAndUpdate(
+    { key: 'global' },
+    { mcpApiKey },
+    { upsert: true, new: true }
+  );
+  res.json({ mcpApiKey: s.mcpApiKey });
 });
 
 router.post('/test', async (req, res) => {

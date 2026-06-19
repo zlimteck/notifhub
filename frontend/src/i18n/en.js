@@ -120,6 +120,17 @@ export default {
       ok: '✅ Password updated',
       mismatch: '❌ Passwords do not match',
     },
+    mcp: {
+      title: 'MCP Server',
+      hint: 'API key for the MCP server and the REST API. MCP Streamable HTTP connection: Auth → Bearer Token. Also usable as a Bearer token on all /api endpoints.',
+      keyLabel: 'API Key',
+      copy: 'Copy',
+      copied: 'Copied!',
+      regenerate: 'Regenerate',
+      regenerateConfirm: 'Regenerate the key? Existing clients will need to be reconfigured.',
+      endpoint: 'HTTP Endpoint',
+      stdioHint: 'For the stdio transport (Claude Desktop locally), use:',
+    },
     docker: {
       title: 'Docker services',
       internal: 'internal',

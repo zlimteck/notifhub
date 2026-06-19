@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { settings as api, auth as authApi } from '../api';
-import { Save, Send, Info, KeyRound, CalendarClock, BarChart2, Globe } from 'lucide-react';
+import { Save, Send, Info, KeyRound, CalendarClock, BarChart2, Globe, Copy, Check, RefreshCw, Server } from 'lucide-react';
 import { useLang } from '../context/LangContext';
 import { useToast } from '../context/ToastContext';
 
@@ -59,6 +59,8 @@ export default function Settings() {
   const [urlsText, setUrlsText] = useState('');
   const [testing, setTesting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [mcpApiKey, setMcpApiKey] = useState('');
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     api.get()
@@ -71,6 +73,7 @@ export default function Settings() {
           statusPage: s.statusPage || { title: '' },
         });
         setUrlsText((s.appriseUrls || []).join('\n'));
+        setMcpApiKey(s.mcpApiKey || '');
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -263,6 +266,51 @@ export default function Settings() {
 
       <ChangePassword />
 
+      <div className="card space-y-4">
+        <h2 className="font-semibold text-thistle text-sm flex items-center gap-2">
+          <Server size={14} className="text-periwinkle" /> {t('settings.mcp.title')}
+        </h2>
+        <p className="text-xs text-muted">{t('settings.mcp.hint')}</p>
+
+        <div className="space-y-2">
+          <label className="label">{t('settings.mcp.keyLabel')}</label>
+          <div className="bg-granite-3/60 border border-border rounded-lg px-3 py-2 flex items-center gap-2 font-mono text-xs">
+            <span className="text-frosted truncate flex-1">{mcpApiKey}</span>
+            <button
+              onClick={() => { navigator.clipboard.writeText(mcpApiKey); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
+              className="p-1 rounded text-muted hover:text-thistle transition-colors shrink-0"
+            >
+              {copied ? <Check size={13} className="text-celadon" /> : <Copy size={13} />}
+            </button>
+          </div>
+          <button
+            onClick={async () => {
+              if (!window.confirm(t('settings.mcp.regenerateConfirm'))) return;
+              const { mcpApiKey: newKey } = await api.regenerateMcpKey();
+              setMcpApiKey(newKey);
+              toast.add(t('settings.mcp.regenerate'), 'success');
+            }}
+            className="btn-primary"
+          >
+            <RefreshCw size={13} /> {t('settings.mcp.regenerate')}
+          </button>
+        </div>
+
+        <div className="space-y-1">
+          <p className="text-xs text-muted">{t('settings.mcp.endpoint')}</p>
+          <div className="bg-granite-3/60 border border-border rounded-xl px-3 py-2 font-mono text-xs text-thistle select-all">
+            {window.location.origin}/api/mcp
+          </div>
+        </div>
+
+        <div className="space-y-1">
+          <p className="text-xs text-muted">{t('settings.mcp.stdioHint')}</p>
+          <div className="bg-granite-3/60 border border-border rounded-xl px-3 py-2 font-mono text-xs text-thistle">
+            node /chemin/vers/notifhub/backend/mcp-stdio.js
+          </div>
+        </div>
+      </div>
+
       <div className="card space-y-3">
         <h2 className="font-semibold text-thistle text-sm flex items-center gap-2">
           <svg viewBox="0 0 24 18" className="w-5 h-4 fill-[#2496ED]" xmlns="http://www.w3.org/2000/svg">
@@ -274,6 +322,7 @@ export default function Settings() {
           {[
             ['App',         `${window.location.hostname}:3050`],
             ['Backend API', `${window.location.hostname}:3050/api`],
+            ['MCP (HTTP)',  `${window.location.hostname}:3050/api/mcp`],
             ['Apprise API', `${window.location.hostname}:8008`],
             ['MongoDB',     `${t('settings.docker.internal')} (mongo:27017)`],
           ].map(([label, val]) => (

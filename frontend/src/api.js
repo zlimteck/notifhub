@@ -51,6 +51,7 @@ export const settings = {
   get: () => api.get('/settings').then(r => r.data),
   save: (data) => api.put('/settings', data).then(r => r.data),
   test: () => api.post('/settings/test').then(r => r.data),
+  regenerateMcpKey: () => api.post('/settings/mcp/regenerate').then(r => r.data),
 };
 
 export const history = {

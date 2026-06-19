@@ -37,6 +37,7 @@
 - **Auto / light / dark theme** — follows system preference, persisted per browser
 - **FR / EN interface** — language toggle in the sidebar
 - **REST API** — full API with Bearer token auth, documented in-app
+- **MCP server** — Model Context Protocol server exposing monitors, incidents and stats to AI assistants (Claude Desktop, etc.) via Streamable HTTP and stdio transports
 
 ## Stack
 
@@ -124,6 +125,58 @@ mailto://user:pass@gmail.com       # Email
 ```
 
 Full list: https://github.com/caronc/apprise/wiki
+
+## MCP Server
+
+NotifHub exposes a [Model Context Protocol](https://modelcontextprotocol.io) server so AI assistants can query your monitoring data directly.
+
+### Tools available
+
+| Tool | Description |
+|------|-------------|
+| `list_monitors` | List all monitors with status (filterable by status / category / enabled) |
+| `get_monitor` | Full details + metrics + last 20 snapshots for a specific monitor |
+| `list_incidents` | Recent incidents (filterable: open only, by monitor) |
+| `get_stats` | Global counters — total, online, offline, warning, error, disabled |
+| `trigger_check` | Trigger an immediate check for a monitor |
+
+Resources `notifhub://monitors/{name}` are also available for direct URI access.
+
+### Streamable HTTP (remote)
+
+The MCP endpoint is available at `/api/mcp`. The API key is auto-generated on first start and visible in **Settings → MCP Server**.
+
+```json
+{
+  "mcpServers": {
+    "notifhub": {
+      "url": "http://your-server:3050/api/mcp",
+      "type": "streamable-http",
+      "headers": {
+        "Authorization": "Bearer <your-mcp-api-key>"
+      }
+    }
+  }
+}
+```
+
+### stdio (local / Claude Desktop)
+
+```json
+{
+  "mcpServers": {
+    "notifhub": {
+      "command": "node",
+      "args": ["/path/to/notifhub/backend/mcp-stdio.js"],
+      "env": {
+        "MONGO_URI": "mongodb://notifhub:notifhub_pass@localhost:27017/notifhub"
+      }
+    }
+  }
+}
+```
+
+The same API key also works as a Bearer token on all `/api` REST endpoints.
 
 ## Environment variables
 
