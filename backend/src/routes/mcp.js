@@ -5,16 +5,12 @@ const { createServer } = require('../mcp/server');
 
 async function checkAuth(req, res) {
   const Settings = require('../models/Settings');
-  let s = await Settings.findOne({ key: 'global' }).lean();
-  if (!s?.mcpApiKey) {
-    const mcpApiKey = require('crypto').randomBytes(24).toString('hex');
-    s = await Settings.findOneAndUpdate(
-      { key: 'global' },
-      { $set: { mcpApiKey } },
-      { upsert: true, new: true }
-    ).lean();
+  const s = await Settings.findOne({ key: 'global' }).lean();
+  const apiKey = s?.mcpApiKey;
+  if (!apiKey) {
+    res.status(503).json({ error: 'MCP API key not generated yet — open Settings to initialize it' });
+    return false;
   }
-  const apiKey = s.mcpApiKey;
   const auth = req.headers['authorization'] || '';
   if (auth !== `Bearer ${apiKey}`) {
     res.status(401).json({ error: 'Unauthorized' });

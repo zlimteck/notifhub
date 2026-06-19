@@ -277,7 +277,25 @@ export default function Settings() {
           <div className="bg-granite-3/60 border border-border rounded-lg px-3 py-2 flex items-center gap-2 font-mono text-xs">
             <span className="text-frosted truncate flex-1">{mcpApiKey}</span>
             <button
-              onClick={() => { navigator.clipboard.writeText(mcpApiKey); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
+              onClick={() => {
+                const text = mcpApiKey;
+                function fallback() {
+                  const el = document.createElement('textarea');
+                  el.value = text;
+                  el.style.cssText = 'position:fixed;opacity:0';
+                  document.body.appendChild(el);
+                  el.select();
+                  document.execCommand('copy');
+                  document.body.removeChild(el);
+                }
+                if (navigator.clipboard) {
+                  navigator.clipboard.writeText(text).catch(fallback);
+                } else {
+                  fallback();
+                }
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1500);
+              }}
               className="p-1 rounded text-muted hover:text-thistle transition-colors shrink-0"
             >
               {copied ? <Check size={13} className="text-celadon" /> : <Copy size={13} />}
