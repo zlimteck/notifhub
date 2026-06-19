@@ -4,33 +4,34 @@
 
 @layer base {
   :root {
-    --nh-surface:    17 27 25;
-    --nh-card:       26 40 38;
-    --nh-border:     45 64 61;
-    --nh-muted:      107 143 139;
-    --nh-thistle:    212 197 226;
-    --nh-periwinkle: 201 215 248;
-    --nh-frosted:    167 226 227;
-    --nh-celadon:    128 207 169;
-    --nh-granite:    76 102 99;
-    --nh-granite-2:  58 79 77;
-    --nh-granite-3:  38 53 51;
-    --nh-ink:        241 245 249;
+    --nh-surface:    9 9 11;
+    --nh-card:       15 15 18;
+    --nh-border:     30 30 38;
+    --nh-muted:      98 98 115;
+    --nh-thistle:    180 180 204;
+    --nh-periwinkle: 96 165 250;
+    --nh-frosted:    148 163 184;
+    --nh-celadon:    52 211 153;
+    --nh-granite:    40 40 52;
+    --nh-granite-2:  28 28 38;
+    --nh-granite-3:  20 20 30;
+    --nh-ink:        242 242 248;
   }
 
   :root.light {
-    --nh-surface:    240 245 244;
+    color-scheme: light;
+    --nh-surface:    248 248 252;
     --nh-card:       255 255 255;
-    --nh-border:     197 214 212;
-    --nh-muted:      101 140 137;
-    --nh-thistle:    44 31 67;
-    --nh-periwinkle: 63 86 165;
-    --nh-frosted:    12 116 117;
-    --nh-celadon:    21 107 69;
-    --nh-granite:    138 171 168;
-    --nh-granite-2:  184 205 203;
-    --nh-granite-3:  226 238 236;
-    --nh-ink:        15 23 42;
+    --nh-border:     220 220 232;
+    --nh-muted:      110 110 130;
+    --nh-thistle:    60 60 90;
+    --nh-periwinkle: 37 99 235;
+    --nh-frosted:    71 85 105;
+    --nh-celadon:    5 150 105;
+    --nh-granite:    180 180 200;
+    --nh-granite-2:  210 210 225;
+    --nh-granite-3:  232 232 242;
+    --nh-ink:        15 15 25;
   }
 
   body {
@@ -76,6 +77,29 @@
 
 .animate-fade-in-up {
   animation: fade-in-up 0.25s ease both;
+}
+
+@keyframes flatline {
+  0%   { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -400; }
+}
+@keyframes pulse-red {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(1.15); }
+}
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+.animate-flatline {
+  stroke-dasharray: 8 6;
+  animation: flatline 2s linear infinite;
+}
+.animate-pulse-red {
+  animation: pulse-red 2s ease-in-out infinite;
+}
+.animate-blink {
+  animation: blink-cursor 1s step-end infinite;
 }
 
 .modal-backdrop {
@@ -135,7 +159,7 @@
   }
   .select {
     @apply input appearance-none cursor-pointer pr-8;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b8f8b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23626273' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 0.6rem center;
     background-size: 1.2em 1.2em;

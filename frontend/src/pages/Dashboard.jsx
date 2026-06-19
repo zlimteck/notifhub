@@ -785,7 +785,7 @@ export default function Dashboard() {
           </div>
           <select value={sortMode} onChange={e => setSortMode(e.target.value)}
             className="h-8 text-sm shrink-0 bg-surface border border-border rounded-lg px-2 pr-6 text-ink focus:outline-none focus:border-periwinkle transition-colors appearance-none cursor-pointer"
-            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b8f8b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.3rem center', backgroundSize: '1.1em 1.1em' }}>
+            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23626273' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.3rem center', backgroundSize: '1.1em 1.1em' }}>
             {['manual', 'status', 'name'].map(mode => (
               <option key={mode} value={mode}>
                 {t(`dashboard.sort${mode.charAt(0).toUpperCase() + mode.slice(1)}`)}
