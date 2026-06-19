@@ -38,6 +38,7 @@ export const monitors = {
   cancelMaintenance: (id) => api.delete(`/monitors/${id}/maintenance`).then(r => r.data),
   test:       (id)           => api.post(`/monitors/${id}/test`).then(r => r.data),
   testConfig: (type, config) => api.post('/monitors/test', { type, config }).then(r => r.data),
+  haEntities: (url, token, rejectUnauthorized) => api.post('/monitors/homeassistant/entities', { url, token, rejectUnauthorized }).then(r => r.data),
 };
 
 export const logs = {

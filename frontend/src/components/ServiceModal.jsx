@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Wifi } from 'lucide-react';
+import { X, Plus, Trash2, Wifi, RefreshCw } from 'lucide-react';
 import { useLang } from '../context/LangContext';
 import { useToast } from '../context/ToastContext';
 import { monitors as monitorsApi } from '../api';
@@ -30,7 +30,8 @@ const TYPE_DEFAULTS = {
   heartbeat:  { checkInterval: 5,  reportInterval: 0,  config: { expectedEvery: 60, slug: uuid() } },
   docker:     { checkInterval: 1,  reportInterval: 0,  config: { socketPath: '/var/run/docker.sock' } },
   unraid:     { checkInterval: 5,  reportInterval: 24, config: { apiUrl: '', apiKey: '', rejectUnauthorized: true } },
-  speedtest:  { checkInterval: 60, reportInterval: 24, config: { apiUrl: '', apiKey: '', rejectUnauthorized: true } },
+  speedtest:      { checkInterval: 60, reportInterval: 24, config: { apiUrl: '', apiKey: '', rejectUnauthorized: true } },
+  homeassistant:  { checkInterval: 5,  reportInterval: 24, config: { url: '', token: '', entities: [], rejectUnauthorized: true } },
 };
 
 const TYPE_LABELS = {
@@ -49,7 +50,8 @@ const TYPE_LABELS = {
   heartbeat:  'Heartbeat',
   docker:     'Docker',
   unraid:     'Unraid',
-  speedtest:  'Speedtest Tracker',
+  speedtest:     'Speedtest Tracker',
+  homeassistant: 'Home Assistant',
 };
 
 function Field({ label, value, onChange, placeholder, type = 'text', hint }) {
@@ -60,6 +62,110 @@ function Field({ label, value, onChange, placeholder, type = 'text', hint }) {
         onChange={e => onChange(e.target.value)} />
       {hint && <p className="text-xs text-muted mt-1">{hint}</p>}
     </div>
+  );
+}
+
+function HAConfigFields({ config, set, t }) {
+  const [entityList, setEntityList] = useState([]);
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  async function loadEntities() {
+    if (!config.url || !config.token) return;
+    setLoading(true); setError(null);
+    try {
+      const { entities } = await monitorsApi.haEntities(config.url, config.token, config.rejectUnauthorized);
+      setEntityList(entities);
+    } catch (e) {
+      setError(t('form.fields.homeassistant.loadError'));
+    }
+    setLoading(false);
+  }
+
+  const selected = config.entities || [];
+  const filtered = entityList.filter(e =>
+    !selected.some(s => s.entity_id === e.entity_id) &&
+    (e.entity_id.toLowerCase().includes(search.toLowerCase()) ||
+     e.friendly_name.toLowerCase().includes(search.toLowerCase()))
+  );
+
+  function addEntity(entity) {
+    set('entities', [...selected, { entity_id: entity.entity_id, friendly_name: entity.friendly_name }]);
+    setSearch('');
+  }
+
+  function removeEntity(entity_id) {
+    set('entities', selected.filter(e => e.entity_id !== entity_id));
+  }
+
+  return (
+    <>
+      <Field label="URL Home Assistant" value={config.url} onChange={v => set('url', v)}
+        placeholder="http://homeassistant.local:8123"
+        hint={t('form.fields.homeassistant.urlHint')} />
+      <Field label="Token" value={config.token} onChange={v => set('token', v)}
+        type="password" placeholder="••••••••••••••••"
+        hint={t('form.fields.homeassistant.tokenHint')} />
+      <TlsToggle config={config} set={set} t={t} />
+
+      {/* Entity selector */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <label className="label mb-0">{t('form.fields.homeassistant.selectedEntities')}</label>
+          <button type="button" onClick={loadEntities} disabled={loading || !config.url || !config.token}
+            className="flex items-center gap-1.5 text-xs text-periwinkle hover:text-thistle disabled:opacity-40 transition-colors">
+            <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
+            {loading ? t('form.fields.homeassistant.loading') : t('form.fields.homeassistant.loadEntities')}
+          </button>
+        </div>
+
+        {error && <p className="text-xs text-red-400">{error}</p>}
+        {!error && entityList.length > 0 && (
+          <p className="text-xs text-celadon">{entityList.length} {t('form.fields.homeassistant.entitiesLoaded')}</p>
+        )}
+
+        {/* Selected entities */}
+        {selected.length > 0 ? (
+          <div className="space-y-1">
+            {selected.map(e => (
+              <div key={e.entity_id} className="flex items-center justify-between bg-granite-3/40 border border-border rounded-lg px-3 py-2">
+                <div className="min-w-0">
+                  <p className="text-xs text-thistle font-medium truncate">{e.friendly_name}</p>
+                  <p className="text-xs text-muted font-mono truncate">{e.entity_id}</p>
+                </div>
+                <button type="button" onClick={() => removeEntity(e.entity_id)}
+                  className="text-muted hover:text-red-400 transition-colors ml-2 shrink-0">
+                  <X size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-muted/60 italic">{t('form.fields.homeassistant.noEntities')}</p>
+        )}
+
+        {/* Search + add from list */}
+        {entityList.length > 0 && (
+          <div className="space-y-1">
+            <input className="input" value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder={t('form.fields.homeassistant.searchEntities')} />
+            {search && filtered.length > 0 && (
+              <div className="border border-border rounded-lg overflow-hidden max-h-48 overflow-y-auto">
+                {filtered.slice(0, 50).map(e => (
+                  <button key={e.entity_id} type="button" onClick={() => addEntity(e)}
+                    className="w-full text-left px-3 py-2 hover:bg-granite-3/60 transition-colors border-b border-border last:border-0">
+                    <p className="text-xs text-thistle font-medium truncate">{e.friendly_name}</p>
+                    <p className="text-xs text-muted font-mono truncate">{e.entity_id}</p>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 
@@ -348,6 +454,10 @@ function ConfigFields({ type, config, onChange, t }) {
     </>
   );
 
+  if (type === 'homeassistant') return (
+    <HAConfigFields config={config} set={set} t={t} />
+  );
+
   if (type === 'speedtest') return (
     <>
       <Field label="URL Speedtest Tracker" value={config.apiUrl} onChange={v => set('apiUrl', v)}
@@ -499,13 +609,13 @@ export default function ServiceModal({ monitor, onClose, onSave }) {
             <span className="text-sm text-thistle">{t('form.showOnStatusPage')}</span>
           </label>
 
-          {getMetrics(form.type).length > 0 && (
+          {getMetrics(form.type, form.config).length > 0 && (
             <div>
               <label className="label">{t('form.cardMetric')}</label>
               <select className="select" value={form.cardMetric || ''}
                 onChange={e => setForm(f => ({ ...f, cardMetric: e.target.value || null }))}>
                 <option value="">{t('form.cardMetricDefault')}</option>
-                {getMetrics(form.type).map(m => (
+                {getMetrics(form.type, form.config).map(m => (
                   <option key={m.key} value={m.key}>{lang === 'fr' ? m.fr : m.en}</option>
                 ))}
               </select>

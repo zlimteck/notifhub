@@ -143,6 +143,24 @@ function MetricsBlock({ monitor }) {
 
   if (type === 'cloudflare') return <CloudflareTunnels metrics={metrics} />;
 
+  if (type === 'homeassistant') return (
+    <div className="space-y-1">
+      {metrics.version && <p className="text-xs text-muted">v<span className="text-thistle">{metrics.version}</span></p>}
+      {metrics.entityStates?.length > 0 && (
+        <div className="space-y-0.5 max-h-28 overflow-y-auto pr-1">
+          {metrics.entityStates.map(e => (
+            <div key={e.entity_id} className="flex items-center justify-between text-xs gap-2">
+              <span className="text-muted truncate">{e.friendly_name}</span>
+              <span className={`font-medium shrink-0 ${e.state === 'unavailable' ? 'text-red-400' : 'text-thistle'}`}>
+                {e.state}{e.unit ? ` ${e.unit}` : ''}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
   if (type === 'adguardhome') return (
     <div className="space-y-1.5">
       <div className="flex gap-4 text-xs text-muted">
@@ -547,14 +565,14 @@ function CardContent({ monitor, hist, dailyHist, showGraphs, onSelect, t, draggi
               <div className="flex items-center justify-between mb-0.5">
                 <span className="text-muted" style={{ fontSize: 10 }}>
                   {cardMetric
-                    ? getMetricLabel(monitor.type, cardMetric, lang)
-                    : (getMetrics(monitor.type)[0]
-                        ? getMetricLabel(monitor.type, getMetrics(monitor.type)[0].key, lang)
+                    ? getMetricLabel(monitor.type, cardMetric, lang, monitor.config)
+                    : (getMetrics(monitor.type, monitor.config)[0]
+                        ? getMetricLabel(monitor.type, getMetrics(monitor.type, monitor.config)[0].key, lang, monitor.config)
                         : null)}
                 </span>
                 <span className="font-medium text-thistle" style={{ fontSize: 10 }}>
                   {(() => {
-                    const key = cardMetric || getMetrics(monitor.type)[0]?.key;
+                    const key = cardMetric || getMetrics(monitor.type, monitor.config)[0]?.key;
                     const last = [...points].reverse().find(p => extractValue(p, cardMetric) != null);
                     return last ? formatMetricValue(monitor.type, key, extractValue(last, cardMetric)) : '—';
                   })()}
@@ -580,6 +598,7 @@ function metricSummary(monitor) {
     case 'ssh':        return m.cpuPct != null ? `CPU ${m.cpuPct}%` : m.memPct != null ? `RAM ${m.memPct}%` : null;
     case 'immich':     return m.diskPct != null ? `${m.diskPct}%` : null;
     case 'ultracc':    return m.free_pct != null ? `${m.free_pct}% libre` : null;
+    case 'homeassistant': return m.entityStates?.length > 0 ? `${m.entityStates.filter(e => e.state !== 'unavailable').length}/${m.entityStates.length} entités` : m.version ? `v${m.version}` : null;
     case 'adguardhome': return m.blockedPct != null ? `${m.blockedPct}% bloqués` : null;
     case 'adguard':     return m.pct_requests != null ? `${m.pct_requests}%` : null;
     case 'cloudflare': return m.total != null ? `${m.healthy}/${m.total} tunnels` : null;

@@ -89,6 +89,31 @@ router.delete('/:id', async (req, res) => {
   res.json({ ok: true });
 });
 
+// POST /api/monitors/homeassistant/entities — proxy to fetch HA entity list
+router.post('/homeassistant/entities', async (req, res) => {
+  const { url, token, rejectUnauthorized = true } = req.body;
+  if (!url || !token) return res.status(400).json({ error: 'url et token requis' });
+  const axios = require('axios');
+  const base  = url.replace(/\/$/, '');
+  const httpsAgent = rejectUnauthorized ? undefined : new (require('https').Agent)({ rejectUnauthorized: false });
+  try {
+    const r = await axios.get(`${base}/api/states`, {
+      timeout: 15000,
+      httpsAgent,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const entities = r.data.map(e => ({
+      entity_id:     e.entity_id,
+      friendly_name: e.attributes?.friendly_name || e.entity_id,
+      state:         e.state,
+      domain:        e.entity_id.split('.')[0],
+    })).sort((a, b) => a.entity_id.localeCompare(b.entity_id));
+    res.json({ entities });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // POST /api/monitors/test — test a config without saving (for new services)
 router.post('/test', async (req, res) => {
   const { type, config } = req.body;

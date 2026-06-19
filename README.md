@@ -22,7 +22,7 @@
 ## Features
 
 - **Unified dashboard** — status overview of all your services at a glance, grid or list view
-- **16 monitor types** — HTTP/HTTPS, Ping/TCP, SSH, Proxmox, Cloudflare, AdGuard DNS, AdGuard Home, Portainer, Docker, Syncthing, Immich, HostMyServers, Ultra.cc, Heartbeat, Unraid, Speedtest Tracker
+- **17 monitor types** — HTTP/HTTPS, Ping/TCP, SSH, Proxmox, Cloudflare, AdGuard DNS, AdGuard Home, Home Assistant, Portainer, Docker, Syncthing, Immich, HostMyServers, Ultra.cc, Heartbeat, Unraid, Speedtest Tracker
 - **Public status page** — shareable `/status` page (no login required) with uptime bars, open incidents, and 90-day history per service; toggle visibility per service
 - **Search & sort** — filter cards by name, sort by status / name / manual order
 - **Drag & drop reordering** — manually reorder cards in grid view
@@ -87,6 +87,7 @@ Default credentials: `admin` / `notifhub`
 | **HMS (HostMyServers)** | VPS status and specs via API token |
 | **Ultra.cc** | Seedbox storage and traffic via Stats API URL |
 | **Unraid** | Array state, disk usage, CPU / RAM, temperature via GraphQL API |
+| **Home Assistant** | Instance status, version, and selected entity states via Long-lived access token. Numeric entities (temperature, humidity, power…) can be graphed — non-numeric states (on/off, home/away) are displayed but not graphable |
 | **Speedtest Tracker** | Latest speedtest result — download, upload, ping, jitter |
 
 ## Alerts sent per monitor type
@@ -108,6 +109,7 @@ Additional type-specific alerts:
 | **HMS** | Per-VPS unreachable · High CPU · High memory |
 | **Ultra.cc** | Low storage · Low traffic |
 | **Unraid** | Array stopped · Disk error |
+| **Home Assistant** | Entity becomes unavailable · Entity restored |
 
 ## Notifications (Apprise)
 

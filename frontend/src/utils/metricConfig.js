@@ -28,6 +28,9 @@ const CONFIG = {
     { key: 'memPct',  fr: 'RAM',    en: 'RAM',  unit: '%' },
     { key: 'diskPct', fr: 'Disque', en: 'Disk', unit: '%' },
   ],
+  homeassistant: [
+    { key: 'version', fr: 'Version', en: 'Version', unit: '' },
+  ],
   adguardhome: [
     { key: 'blockedPct',   fr: 'Bloquées %',   en: 'Blocked %',  unit: '%' },
     { key: 'totalQueries', fr: 'Requêtes',      en: 'Queries',    unit: '' },
@@ -80,13 +83,31 @@ const CONFIG = {
   ],
 };
 
+function haEntityMetrics(config) {
+  const entityOptions = (config?.entities || []).map(e => ({
+    key: `entity__${e.entity_id.replace(/\./g, '__')}`,
+    fr: e.friendly_name || e.entity_id,
+    en: e.friendly_name || e.entity_id,
+    unit: '',
+  }));
+  return [
+    { key: 'activeEntities', fr: 'Entités actives', en: 'Active entities', unit: '' },
+    ...entityOptions,
+  ];
+}
+
 /** Returns the chartable metrics for a given type */
-export function getMetrics(type) {
+export function getMetrics(type, config) {
+  if (type === 'homeassistant') return haEntityMetrics(config);
   return CONFIG[type] || [];
 }
 
 /** Returns the label for a specific metric key */
-export function getMetricLabel(type, key, lang = 'fr') {
+export function getMetricLabel(type, key, lang = 'fr', config) {
+  if (type === 'homeassistant') {
+    const m = haEntityMetrics(config).find(m => m.key === key);
+    if (m) return lang === 'fr' ? m.fr : m.en;
+  }
   const m = (CONFIG[type] || []).find(m => m.key === key);
   if (!m) return key;
   return lang === 'fr' ? m.fr : m.en;

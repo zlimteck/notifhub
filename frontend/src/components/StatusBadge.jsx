@@ -1,7 +1,7 @@
 import React from 'react';
 import { useLang } from '../context/LangContext';
 
-export default function StatusBadge({ status = 'unknown' }) {
+export default function StatusBadge({ status = 'unknown', dotOnly = false }) {
   const { t } = useLang();
 
   const STATUS = {
@@ -16,7 +16,7 @@ export default function StatusBadge({ status = 'unknown' }) {
   return (
     <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${s.text}`}>
       <span className={`w-2 h-2 rounded-full ${s.dot}`} />
-      {t(s.key)}
+      {!dotOnly && t(s.key)}
     </span>
   );
 }

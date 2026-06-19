@@ -40,7 +40,7 @@ export default function ServiceDetail({ monitor, onClose }) {
   const sparkColor = monitor.status === 'online' ? '#c9d7f8' : monitor.status === 'warning' ? '#fbbf24' : '#f87171';
   const locale = lang === 'fr' ? 'fr-FR' : 'en-GB';
 
-  const availableMetrics = getMetrics(monitor.type);
+  const availableMetrics = getMetrics(monitor.type, monitor.config);
   const points = hist?.points || [];
   const hasAnyData = points.length >= 2;
   const hasMetricsData = points.some(p => p.metrics != null);

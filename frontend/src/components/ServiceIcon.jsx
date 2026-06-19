@@ -1,5 +1,5 @@
 import React from 'react';
-import { siCloudflare, siAdguard, siSyncthing, siProxmox, siImmich, siPortainer } from 'simple-icons';
+import { siCloudflare, siAdguard, siSyncthing, siProxmox, siImmich, siPortainer, siHomeassistant } from 'simple-icons';
 import { Globe, Activity, Terminal, HeartPulse, Gauge } from 'lucide-react';
 
 function SimpleIcon({ icon, size = 20 }) {
@@ -76,7 +76,8 @@ const FALLBACKS = {
   ping:       ({ size }) => <Activity size={size} color="#80cfa9" />,
   ssh:        ({ size }) => <Terminal size={size} color="#a7e2e3" />,
   heartbeat:  ({ size }) => <HeartPulse size={size} color="#f87171" />,
-  speedtest:  ({ size }) => <Gauge size={size} color="#a7e2e3" />,
+  speedtest:      ({ size }) => <Gauge size={size} color="#a7e2e3" />,
+  homeassistant:  ({ size }) => <SimpleIcon icon={siHomeassistant} size={size} />,
 };
 
 function FileIcon({ type, size, onError }) {

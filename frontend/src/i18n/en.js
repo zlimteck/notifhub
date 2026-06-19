@@ -11,6 +11,7 @@ export default {
     sortStatus: 'Status',
     sortName: 'Name',
     search: 'Search…',
+    noResults: 'No services match your search.',
     stats: {
       total: 'Total',
       online: 'Online',
@@ -207,6 +208,7 @@ export default {
       settingsSave:    'Save Apprise config',
       settingsTest:    'Send a test notification',
       publicStatus:    'Public status of all services (no auth required)',
+      haEntities:      'List available Home Assistant entities (proxy)',
     },
   },
   incidents: {
@@ -330,6 +332,17 @@ export default {
       adguardhome: {
         urlHint: 'URL of your AdGuard Home instance (e.g. http://192.168.1.1:3000)',
       },
+      homeassistant: {
+        urlHint: 'URL of your Home Assistant instance (e.g. http://homeassistant.local:8123)',
+        tokenHint: 'Profile → Security → Long-lived access tokens',
+        loadEntities: 'Load entities',
+        loading: 'Loading…',
+        searchEntities: 'Search an entity…',
+        selectedEntities: 'Monitored entities',
+        noEntities: 'No entity selected',
+        loadError: 'Unable to load entities',
+        entitiesLoaded: 'entities loaded — type to search',
+      },
       hms: {
         tokenHint: 'HostMyServers → My account → API',
       },
@@ -428,6 +441,7 @@ export default {
       immich:     'Disk (%)',
       ssh:        'CPU (%)',
       ultracc:    'Storage usage (%)',
+      homeassistant: 'Active entities',
       adguardhome: 'Blocked queries (%)',
       adguard:     'Requests (%)',
       cloudflare: 'Active tunnels',

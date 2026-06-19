@@ -16,7 +16,11 @@ function primaryMetric(type, metrics) {
     case 'heartbeat':  return metrics.minutesSince ?? null;
     case 'docker':     return metrics.containersRunning ?? null;
     case 'unraid':     return metrics.diskPct ?? null;
-    case 'speedtest':  return metrics.downloadMbps ?? null;
+    case 'speedtest':      return metrics.downloadMbps ?? null;
+    case 'homeassistant': {
+      const key = Object.keys(metrics).find(k => k.startsWith('entity__'));
+      return key ? metrics[key] : (metrics.activeEntities ?? null);
+    }
     default:           return null;
   }
 }

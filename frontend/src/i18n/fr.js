@@ -11,6 +11,7 @@ export default {
     sortStatus: 'Statut',
     sortName: 'Nom',
     search: 'Rechercher…',
+    noResults: 'Aucun service ne correspond à la recherche.',
     stats: {
       total: 'Total',
       online: 'En ligne',
@@ -207,6 +208,7 @@ export default {
       settingsSave:    'Sauvegarde la config Apprise',
       settingsTest:    'Envoie une notification de test',
       publicStatus:    'Statut public de tous les services (sans auth)',
+      haEntities:      'Liste les entités Home Assistant disponibles (proxy)',
     },
   },
   incidents: {
@@ -330,6 +332,17 @@ export default {
       adguardhome: {
         urlHint: 'URL de votre instance AdGuard Home (ex: http://192.168.1.1:3000)',
       },
+      homeassistant: {
+        urlHint: 'URL de votre instance Home Assistant (ex: http://homeassistant.local:8123)',
+        tokenHint: 'Profil → Sécurité → Jetons d\'accès longue durée',
+        loadEntities: 'Charger les entités',
+        loading: 'Chargement…',
+        searchEntities: 'Rechercher une entité…',
+        selectedEntities: 'Entités surveillées',
+        noEntities: 'Aucune entité sélectionnée',
+        loadError: 'Impossible de charger les entités',
+        entitiesLoaded: 'entités chargées — tapez pour rechercher',
+      },
       hms: {
         tokenHint: 'HostMyServers → Mon compte → API',
       },
@@ -428,6 +441,7 @@ export default {
       immich:     'Disque (%)',
       ssh:        'CPU (%)',
       ultracc:    'Utilisation stockage (%)',
+      homeassistant: 'Entités actives',
       adguardhome: 'Requêtes bloquées (%)',
       adguard:     'Requêtes (%)',
       cloudflare: 'Tunnels actifs',

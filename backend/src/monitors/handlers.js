@@ -14,5 +14,6 @@ module.exports = {
   heartbeat:  require('./heartbeat'),
   docker:     require('./docker'),
   unraid:     require('./unraid'),
-  speedtest:  require('./speedtest'),
+  speedtest:      require('./speedtest'),
+  homeassistant:  require('./homeassistant'),
 };
