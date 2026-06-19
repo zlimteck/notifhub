@@ -16,7 +16,8 @@ function uuid() {
 
 const TYPE_DEFAULTS = {
   cloudflare: { checkInterval: 1,  reportInterval: 6,  config: { apiToken: '', accountId: '' } },
-  adguard:    { checkInterval: 60, reportInterval: 24, config: { accessToken: '', refreshTok: '' } },
+  adguard:     { checkInterval: 60, reportInterval: 24, serviceUrl: 'https://adguard-dns.io', config: { accessToken: '', refreshTok: '' } },
+  adguardhome: { checkInterval: 5,  reportInterval: 24, config: { url: '', username: '', password: '', rejectUnauthorized: true } },
   hms:        { checkInterval: 5,  reportInterval: 0,  config: { hmsToken: '', vpsList: [{ id: '', name: '' }] } },
   ultracc:    { checkInterval: 5,  reportInterval: 0,  config: { apiUrl: '', ultraToken: '' } },
   syncthing:  { checkInterval: 5,  reportInterval: 24, config: { apiUrl: '', apiKey: '', folderIds: [], rejectUnauthorized: true } },
@@ -34,7 +35,8 @@ const TYPE_DEFAULTS = {
 
 const TYPE_LABELS = {
   cloudflare: 'Cloudflare Tunnels',
-  adguard:    'AdGuard DNS',
+  adguard:     'AdGuard DNS',
+  adguardhome: 'AdGuard Home',
   hms:        'HostMyServers VPS',
   ultracc:    'Ultra.cc Seedbox',
   syncthing:  'Syncthing',
@@ -333,6 +335,19 @@ function ConfigFields({ type, config, onChange, t }) {
       hint={t('form.fields.docker.socketPathHint')} />
   );
 
+  if (type === 'adguardhome') return (
+    <>
+      <Field label="URL AdGuard Home" value={config.url} onChange={v => set('url', v)}
+        placeholder="http://192.168.1.1:3000"
+        hint={t('form.fields.adguardhome.urlHint')} />
+      <Field label={t('form.fields.ssh.user')} value={config.username} onChange={v => set('username', v)}
+        placeholder="admin" />
+      <Field label={t('form.fields.ssh.password')} value={config.password} onChange={v => set('password', v)}
+        type="password" placeholder="••••••••" />
+      <TlsToggle config={config} set={set} t={t} />
+    </>
+  );
+
   if (type === 'speedtest') return (
     <>
       <Field label="URL Speedtest Tracker" value={config.apiUrl} onChange={v => set('apiUrl', v)}
@@ -354,12 +369,13 @@ export default function ServiceModal({ monitor, onClose, onSave }) {
   const [testing, setTesting] = useState(false);
 
   async function handleTest() {
-    if (!monitor?._id) return;
     setTesting(true);
     try {
-      const r = await monitorsApi.test(monitor._id);
-      if (r.status === 'online') toast.add(`${t('test.ok')} — ${monitor.name}`, 'success');
-      else toast.add(`${t('test.error')} — ${monitor.name} (${r.status}${r.error ? ': ' + r.error : ''})`, 'error');
+      const r = monitor?._id
+        ? await monitorsApi.test(monitor._id)
+        : await monitorsApi.testConfig(form.type, form.config);
+      if (r.status === 'online') toast.add(`${t('test.ok')} — ${form.name || form.type}`, 'success');
+      else toast.add(`${t('test.error')} — ${form.name || form.type} (${r.status}${r.error ? ': ' + r.error : ''})`, 'error');
     } catch (err) {
       toast.add(err.response?.data?.error || t('test.error'), 'error');
     }
@@ -394,7 +410,14 @@ export default function ServiceModal({ monitor, onClose, onSave }) {
     const d = TYPE_DEFAULTS[type];
     setForm(f => {
       const autoName = !f.name || Object.values(TYPE_LABELS).includes(f.name);
-      return { ...f, type, checkInterval: d.checkInterval, reportInterval: d.reportInterval, cardMetric: null, config: { ...d.config }, ...(autoName ? { name: TYPE_LABELS[type] } : {}) };
+      const autoServiceUrl = !f.serviceUrl || Object.values(TYPE_DEFAULTS).some(td => td.serviceUrl === f.serviceUrl);
+      return {
+        ...f, type,
+        checkInterval: d.checkInterval, reportInterval: d.reportInterval,
+        cardMetric: null, config: { ...d.config },
+        ...(autoName ? { name: TYPE_LABELS[type] } : {}),
+        ...(autoServiceUrl ? { serviceUrl: d.serviceUrl || '' } : {}),
+      };
     });
   };
 
@@ -491,13 +514,11 @@ export default function ServiceModal({ monitor, onClose, onSave }) {
 
           <div className="flex justify-between gap-3 pt-2 border-t border-border">
             <div>
-              {monitor && (
-                <button type="button" onClick={handleTest} disabled={testing}
-                  className="btn-ghost border border-border px-3 py-2 rounded-lg text-sm flex items-center gap-2">
-                  <Wifi size={14} className={testing ? 'animate-pulse text-periwinkle' : ''} />
-                  {testing ? t('test.testing') : t('test.button')}
-                </button>
-              )}
+              <button type="button" onClick={handleTest} disabled={testing}
+                className="btn-ghost border border-border px-3 py-2 rounded-lg text-sm flex items-center gap-2">
+                <Wifi size={14} className={testing ? 'animate-pulse text-periwinkle' : ''} />
+                {testing ? t('test.testing') : t('test.button')}
+              </button>
             </div>
             <div className="flex gap-3">
               <button type="button" onClick={onClose} className="btn-ghost">{t('form.cancel')}</button>

@@ -22,7 +22,7 @@
 ## Features
 
 - **Unified dashboard** — status overview of all your services at a glance, grid or list view
-- **15 monitor types** — HTTP/HTTPS, Ping/TCP, SSH, Proxmox, Cloudflare, AdGuard, Portainer, Docker, Syncthing, Immich, HostMyServers, Ultra.cc, Heartbeat, Unraid, Speedtest Tracker
+- **16 monitor types** — HTTP/HTTPS, Ping/TCP, SSH, Proxmox, Cloudflare, AdGuard DNS, AdGuard Home, Portainer, Docker, Syncthing, Immich, HostMyServers, Ultra.cc, Heartbeat, Unraid, Speedtest Tracker
 - **Public status page** — shareable `/status` page (no login required) with uptime bars, open incidents, and 90-day history per service; toggle visibility per service
 - **Search & sort** — filter cards by name, sort by status / name / manual order
 - **Drag & drop reordering** — manually reorder cards in grid view
@@ -79,7 +79,8 @@ Default credentials: `admin` / `notifhub`
 | **Docker** | Container count and status via Docker socket |
 | **Proxmox** | Node CPU / RAM via API token |
 | **Cloudflare** | Tunnel status and hostnames via API token |
-| **AdGuard** | DNS protection status and request stats |
+| **AdGuard DNS** | DNS protection status and request stats via cloud API |
+| **AdGuard Home** | Self-hosted DNS protection — blocked queries %, total queries, safebrowsing |
 | **Portainer** | Container list per environment via API key |
 | **Syncthing** | Synced folders and connected devices via API key |
 | **Immich** | Photo / video count and disk usage via API key |
@@ -97,10 +98,11 @@ Additional type-specific alerts:
 | Type | Extra alerts |
 |------|-------------|
 | **HTTP** | SSL expiry warning · SSL expired |
-| **SSH** | High RAM · High disk usage |
+| **SSH** | High CPU · High RAM · High disk usage |
 | **Proxmox** | High CPU · High RAM |
 | **Cloudflare** | Per-tunnel offline / restored |
-| **AdGuard** | Protection disabled / re-enabled |
+| **AdGuard DNS** | Protection disabled / re-enabled |
+| **AdGuard Home** | Protection disabled / re-enabled |
 | **Syncthing** | Folder error · Device disconnected / reconnected |
 | **Immich** | Critical disk usage |
 | **HMS** | Per-VPS unreachable · High CPU · High memory |

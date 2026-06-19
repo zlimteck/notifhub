@@ -5,9 +5,10 @@ function primaryMetric(type, metrics) {
     case 'ping':       return metrics.latency ?? null;
     case 'proxmox':    return metrics.cpuPct ?? null;
     case 'immich':     return metrics.diskPct ?? null;
-    case 'ssh':        return metrics.memPct ?? null;
+    case 'ssh':        return metrics.cpuPct ?? metrics.memPct ?? null;
     case 'ultracc':    return metrics.free_pct != null ? 100 - metrics.free_pct : null;
-    case 'adguard':    return metrics.pct_requests ?? null;
+    case 'adguard':      return metrics.pct_requests ?? null;
+    case 'adguardhome':  return metrics.blockedPct ?? null;
     case 'cloudflare': return metrics.healthy ?? null;
     case 'portainer':  return metrics.containersRunning ?? null;
     case 'syncthing':  return metrics.folders_synced ?? null;

@@ -89,6 +89,20 @@ router.delete('/:id', async (req, res) => {
   res.json({ ok: true });
 });
 
+// POST /api/monitors/test — test a config without saving (for new services)
+router.post('/test', async (req, res) => {
+  const { type, config } = req.body;
+  if (!type || !config) return res.status(400).json({ error: 'type et config requis' });
+  const handler = handlers[type];
+  if (!handler) return res.status(400).json({ error: `Type inconnu: ${type}` });
+  try {
+    const result = await handler.check(config, null);
+    res.json({ status: result.status, metrics: result.metrics });
+  } catch (err) {
+    res.json({ status: 'error', error: err.message });
+  }
+});
+
 // POST /api/monitors/:id/test — run a check and return the result without saving
 router.post('/:id/test', async (req, res) => {
   const monitor = await Monitor.findById(req.params.id);

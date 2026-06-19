@@ -36,7 +36,8 @@ export const monitors = {
   reorder: (items) => api.patch('/monitors/reorder', { items }).then(r => r.data),
   setMaintenance: (id, minutes) => api.post(`/monitors/${id}/maintenance`, { minutes }).then(r => r.data),
   cancelMaintenance: (id) => api.delete(`/monitors/${id}/maintenance`).then(r => r.data),
-  test: (id) => api.post(`/monitors/${id}/test`).then(r => r.data),
+  test:       (id)           => api.post(`/monitors/${id}/test`).then(r => r.data),
+  testConfig: (type, config) => api.post('/monitors/test', { type, config }).then(r => r.data),
 };
 
 export const logs = {

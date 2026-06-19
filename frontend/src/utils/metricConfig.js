@@ -24,8 +24,14 @@ const CONFIG = {
     { key: 'lxcRunning', fr: 'LXC actifs',  en: 'Running LXC',  unit: '' },
   ],
   ssh: [
+    { key: 'cpuPct',  fr: 'CPU',    en: 'CPU',  unit: '%' },
     { key: 'memPct',  fr: 'RAM',    en: 'RAM',  unit: '%' },
     { key: 'diskPct', fr: 'Disque', en: 'Disk', unit: '%' },
+  ],
+  adguardhome: [
+    { key: 'blockedPct',   fr: 'Bloquées %',   en: 'Blocked %',  unit: '%' },
+    { key: 'totalQueries', fr: 'Requêtes',      en: 'Queries',    unit: '' },
+    { key: 'blocked',      fr: 'Bloquées',      en: 'Blocked',    unit: '' },
   ],
   adguard: [
     { key: 'pct_requests',   fr: 'Requêtes',          en: 'Requests',      unit: '%' },

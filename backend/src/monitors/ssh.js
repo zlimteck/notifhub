@@ -3,7 +3,7 @@ const { Client } = require('ssh2');
 function sshExec(config) {
   return new Promise((resolve, reject) => {
     const { host, port = 22, username, password, privateKey } = config;
-    const cmd = 'uptime && free -m | grep Mem && df -h / | tail -1';
+    const cmd = 'uptime && free -m | grep Mem && df -h / | tail -1 && top -bn1 | grep -iE "^(%Cpu|Cpu\\(s\\))" | head -1';
     const conn = new Client();
 
     const timer = setTimeout(() => { conn.end(); reject(new Error('Timeout SSH')); }, 12000);
@@ -51,6 +51,13 @@ function parseOutput(out) {
     metrics.diskPct  = parseInt(dfMatch[5]);
   }
 
+  // top -bn1: "%Cpu(s): 2.3 us, ... 96.7 id, ..."
+  const idleMatch = out.match(/(\d+[\.,]\d*)\s*%?\s*id/i);
+  if (idleMatch) {
+    const idle = parseFloat(idleMatch[1].replace(',', '.'));
+    metrics.cpuPct = Math.round((100 - idle) * 10) / 10;
+  }
+
   return metrics;
 }
 
@@ -72,6 +79,8 @@ async function check(config, lastState) {
       message: `Uptime : ${metrics.uptime || '—'}`,
       level: 'success', type: 'status_change',
     });
+    if (lastState && metrics.cpuPct > 90 && (lastState.cpuPct ?? 0) <= 90)
+      notifications.push({ title: `⚠️ CPU élevé — ${host}`, message: `CPU à ${metrics.cpuPct}%`, level: 'warning', type: 'status_change' });
     if (lastState && metrics.memPct > 90 && (lastState.memPct ?? 0) <= 90)
       notifications.push({ title: `⚠️ RAM élevée — ${host}`, message: `RAM à ${metrics.memPct}%`, level: 'warning', type: 'status_change' });
     if (lastState && metrics.diskPct > 90 && (lastState.diskPct ?? 0) <= 90)
@@ -90,9 +99,10 @@ async function check(config, lastState) {
 
 async function report(config, state) {
   if (!state) return { title: `🔒 SSH ${config.host}`, message: 'Inaccessible.' };
+  const cpu = state.cpuPct != null ? `\nCPU : ${state.cpuPct}%` : '';
   return {
     title: `🔒 Rapport SSH — ${state.host}`,
-    message: `Uptime : ${state.uptime || '—'}\nRAM : ${state.memUsed}/${state.memTotal} MB (${state.memPct}%)\nDisque : ${state.diskUsed}/${state.diskSize} (${state.diskPct}%)`,
+    message: `Uptime : ${state.uptime || '—'}${cpu}\nRAM : ${state.memUsed}/${state.memTotal} MB (${state.memPct}%)\nDisque : ${state.diskUsed}/${state.diskSize} (${state.diskPct}%)`,
   };
 }
 

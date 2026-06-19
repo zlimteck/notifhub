@@ -50,7 +50,7 @@ function StatusStrip({ points }) {
 
 function UptimeBar({ days }) {
   if (!days || days.every(d => d === null)) return null;
-  const NUMERIC_TYPES = ['http','ping','proxmox','ssh','immich','ultracc','adguard','unraid'];
+  const NUMERIC_TYPES = ['http','ping','proxmox','ssh','immich','ultracc','adguard','adguardhome','unraid'];
   return (
     <div className="space-y-1">
       <div className="flex gap-px" style={{ height: 6 }}>
@@ -142,6 +142,23 @@ function MetricsBlock({ monitor }) {
   }
 
   if (type === 'cloudflare') return <CloudflareTunnels metrics={metrics} />;
+
+  if (type === 'adguardhome') return (
+    <div className="space-y-1.5">
+      <div className="flex gap-4 text-xs text-muted">
+        <span>{t('metrics.protection')} : <span className={metrics.protectionEnabled ? 'text-celadon font-medium' : 'text-red-400 font-medium'}>{metrics.protectionEnabled ? t('metrics.active') : t('metrics.inactive')}</span></span>
+        {metrics.totalQueries != null && <span>{t('metrics.requests')} : <span className="text-thistle font-medium">{metrics.totalQueries.toLocaleString()}</span></span>}
+      </div>
+      {metrics.blockedPct != null && (
+        <div className="space-y-0.5">
+          <div className="flex justify-between text-xs text-muted">
+            <span>{t('metrics.blocked')}</span><span>{metrics.blockedPct}%</span>
+          </div>
+          <ProgressBar value={metrics.blockedPct} warn={70} danger={90} />
+        </div>
+      )}
+    </div>
+  );
 
   if (type === 'adguard') return (
     <div className="space-y-1.5">
@@ -303,9 +320,10 @@ function MetricsBlock({ monitor }) {
   if (type === 'ssh') return (
     <div className="space-y-1">
       {metrics.uptime && <p className="text-xs text-muted">{t('metrics.uptime')} : <span className="text-thistle">{metrics.uptime}</span></p>}
-      {metrics.memPct != null && (
+      {(metrics.cpuPct != null || metrics.memPct != null || metrics.diskPct != null) && (
         <div className="flex gap-4 text-xs text-muted">
-          <span>{t('metrics.ram')} <span className={metrics.memPct > 80 ? 'text-amber-400 font-medium' : 'text-thistle font-medium'}>{metrics.memPct}%</span></span>
+          {metrics.cpuPct != null && <span>CPU <span className={metrics.cpuPct > 80 ? 'text-amber-400 font-medium' : 'text-thistle font-medium'}>{metrics.cpuPct}%</span></span>}
+          {metrics.memPct != null && <span>{t('metrics.ram')} <span className={metrics.memPct > 80 ? 'text-amber-400 font-medium' : 'text-thistle font-medium'}>{metrics.memPct}%</span></span>}
           {metrics.diskPct != null && <span>{t('metrics.disk')} <span className={metrics.diskPct > 80 ? 'text-amber-400 font-medium' : 'text-thistle font-medium'}>{metrics.diskPct}%</span></span>}
         </div>
       )}
@@ -559,10 +577,11 @@ function metricSummary(monitor) {
     case 'http':       return m.responseTime != null ? `${m.responseTime}ms` : null;
     case 'ping':       return m.latency != null ? `${m.latency}ms` : null;
     case 'proxmox':    return m.cpuPct != null ? `CPU ${m.cpuPct}%` : null;
-    case 'ssh':        return m.memPct != null ? `RAM ${m.memPct}%` : null;
+    case 'ssh':        return m.cpuPct != null ? `CPU ${m.cpuPct}%` : m.memPct != null ? `RAM ${m.memPct}%` : null;
     case 'immich':     return m.diskPct != null ? `${m.diskPct}%` : null;
     case 'ultracc':    return m.free_pct != null ? `${m.free_pct}% libre` : null;
-    case 'adguard':    return m.pct_requests != null ? `${m.pct_requests}%` : null;
+    case 'adguardhome': return m.blockedPct != null ? `${m.blockedPct}% bloqués` : null;
+    case 'adguard':     return m.pct_requests != null ? `${m.pct_requests}%` : null;
     case 'cloudflare': return m.total != null ? `${m.healthy}/${m.total} tunnels` : null;
     case 'portainer':  return m.containersRunning != null ? `${m.containersRunning} actifs` : null;
     case 'docker':     return m.containersRunning != null ? `${m.containersRunning} actifs` : null;

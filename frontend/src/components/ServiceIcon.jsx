@@ -62,7 +62,8 @@ function UltraccIcon({ size = 20 }) {
 
 const FALLBACKS = {
   cloudflare: ({ size }) => <SimpleIcon icon={siCloudflare} size={size} />,
-  adguard:    ({ size }) => <SimpleIcon icon={siAdguard}    size={size} />,
+  adguard:     ({ size }) => <SimpleIcon icon={siAdguard}    size={size} />,
+  adguardhome: ({ size }) => <SimpleIcon icon={siAdguard}    size={size} />,
   syncthing:  ({ size }) => <SimpleIcon icon={siSyncthing}  size={size} />,
   proxmox:    ({ size }) => <SimpleIcon icon={siProxmox}    size={size} />,
   immich:     ({ size }) => <SimpleIcon icon={siImmich}     size={size} />,

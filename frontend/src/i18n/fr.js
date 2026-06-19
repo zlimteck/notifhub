@@ -47,6 +47,7 @@ export default {
     loss: 'Perte',
     tunnels: 'Tunnels',
     used: 'utilisés',
+    blocked: 'Bloquées',
     sslExpired: 'Expiré',
     lastPing: 'Dernier ping',
     noHeartbeat: 'Aucun ping reçu',
@@ -190,6 +191,7 @@ export default {
       monitorsById:    'Récupère un service par ID',
       monitorsByType:  'Services par type',
       monitorsCreate:  'Crée un nouveau service',
+      monitorsTest:    'Teste une config sans sauvegarder — retourne { status, metrics }',
       monitorsUpdate:  'Met à jour un service',
       monitorsToggle:  'Active / désactive un service',
       monitorsRun:     'Déclenche un check immédiat',
@@ -325,6 +327,9 @@ export default {
       adguard: {
         refreshHint: 'Le token sera rafraîchi automatiquement en base.',
       },
+      adguardhome: {
+        urlHint: 'URL de votre instance AdGuard Home (ex: http://192.168.1.1:3000)',
+      },
       hms: {
         tokenHint: 'HostMyServers → Mon compte → API',
       },
@@ -421,9 +426,10 @@ export default {
       ping:       'Latence (ms)',
       proxmox:    'CPU (%)',
       immich:     'Disque (%)',
-      ssh:        'RAM (%)',
+      ssh:        'CPU (%)',
       ultracc:    'Utilisation stockage (%)',
-      adguard:    'Requêtes (%)',
+      adguardhome: 'Requêtes bloquées (%)',
+      adguard:     'Requêtes (%)',
       cloudflare: 'Tunnels actifs',
       portainer:  'Containers actifs',
       syncthing:  'Dossiers synchronisés',

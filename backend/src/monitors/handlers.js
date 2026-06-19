@@ -1,6 +1,7 @@
 module.exports = {
   cloudflare: require('./cloudflare'),
-  adguard:    require('./adguard'),
+  adguard:     require('./adguard'),
+  adguardhome: require('./adguardhome'),
   hms:        require('./hms'),
   ultracc:    require('./ultracc'),
   syncthing:  require('./syncthing'),
