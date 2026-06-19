@@ -17,6 +17,8 @@ const monitorSchema = new mongoose.Schema({
   category: { type: String, default: '' },
   position: { type: Number, default: 0 },
   maintenanceUntil: { type: Date, default: null },
+  lastDownAt: { type: Date, default: null },
+  lastDownNotified: { type: Boolean, default: false },
   cardMetric: { type: String, default: null },
   serviceUrl: { type: String, default: '' },
   showOnStatusPage: { type: Boolean, default: true },

@@ -93,14 +93,14 @@ async function runCheck(monitor) {
 
     if (wentDown) {
       monitorNotifs.push({
-        title: `🔴 ${monitor.name} — Hors ligne`,
+        title: `${monitor.name} — Hors ligne`,
         message: monitorNotifs[0]?.message || `Statut : ${result.status}`,
         level: 'error',
         type: 'status_change',
       });
     } else if (cameBack) {
       monitorNotifs.push({
-        title: `🟢 ${monitor.name} — De retour`,
+        title: `${monitor.name} — De retour`,
         message: 'Le service est de nouveau accessible.',
         level: 'success',
         type: 'status_change',
@@ -108,7 +108,41 @@ async function runCheck(monitor) {
     }
   }
 
+  // Rate limiting: suppress repeated down/up alerts within the cooldown window
+  // to avoid notification spam when a service flaps.
+  const ALERT_COOLDOWN_MS = 15 * 60 * 1000;
+  let { lastDownAt, lastDownNotified } = monitor;
+  const toSend = [];
+
   for (const notif of monitorNotifs) {
+    if (notif.type !== 'status_change') {
+      toSend.push(notif);
+      continue;
+    }
+    const isDown = ['error', 'warning'].includes(notif.level);
+    const isRecovery = notif.level === 'success';
+
+    if (isDown) {
+      const inCooldown = lastDownAt && (Date.now() - new Date(lastDownAt).getTime() < ALERT_COOLDOWN_MS);
+      if (!inCooldown) {
+        toSend.push(notif);
+        lastDownAt = new Date();
+        lastDownNotified = true;
+      } else {
+        lastDownNotified = false;
+        console.log(`[Runner] Rate limited (flap): ${monitor.name} — ${notif.title}`);
+      }
+    } else if (isRecovery) {
+      if (lastDownNotified) toSend.push(notif);
+      lastDownNotified = false;
+    } else {
+      toSend.push(notif);
+    }
+  }
+
+  await Monitor.findByIdAndUpdate(monitor._id, { lastDownAt, lastDownNotified });
+
+  for (const notif of toSend) {
     await sendNotification({ ...notif, monitorId: monitor._id, monitorName: monitor.name });
   }
 }
@@ -187,9 +221,9 @@ async function checkWeeklyReport() {
     let message = `Uptime global : ${uptimePct}% (${onlineCount}/${total} services en ligne)`;
     if (problems.length > 0) {
       message += '\n\nServices en anomalie :\n';
-      message += problems.map(m => `⚠️ ${m.name} — ${m.status}`).join('\n');
+      message += problems.map(m => `${m.name} — ${m.status}`).join('\n');
     } else {
-      message += '\n\n✅ Tous les services sont en ligne.';
+      message += '\n\nTous les services sont en ligne.';
     }
 
     await sendNotification({ title: 'Rapport hebdomadaire NotifHub', message, level: 'info', type: 'report' });
