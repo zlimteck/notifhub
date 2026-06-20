@@ -21,7 +21,7 @@ const TYPE_DEFAULTS = {
   hms:        { checkInterval: 5,  reportInterval: 0,  config: { hmsToken: '', vpsList: [{ id: '', name: '' }] } },
   ultracc:    { checkInterval: 5,  reportInterval: 0,  config: { apiUrl: '', ultraToken: '' } },
   syncthing:  { checkInterval: 5,  reportInterval: 24, config: { apiUrl: '', apiKey: '', folderIds: [], rejectUnauthorized: true } },
-  http:       { checkInterval: 5,  reportInterval: 0,  config: { url: '', method: 'GET', body: '', expectedStatus: 200, keyword: '', timeout: 10000, sslAlertDays: 30, bearerToken: '', basicUser: '', basicPass: '', customHeaderName: '', customHeaderValue: '', rejectUnauthorized: true } },
+  http:       { checkInterval: 5,  reportInterval: 0,  config: { url: '', method: 'GET', body: '', expectedStatus: 200, keyword: '', timeout: 10000, sslAlertDays: 30, responseTimeThreshold: 0, bearerToken: '', basicUser: '', basicPass: '', customHeaderName: '', customHeaderValue: '', rejectUnauthorized: true } },
   ping:       { checkInterval: 2,  reportInterval: 0,  config: { host: '', port: 80, attempts: 3 } },
   proxmox:    { checkInterval: 5,  reportInterval: 24, config: { apiUrl: '', apiToken: '', node: 'pve', rejectUnauthorized: false } },
   immich:     { checkInterval: 30, reportInterval: 24, config: { apiUrl: '', apiKey: '', rejectUnauthorized: true } },
@@ -319,9 +319,10 @@ function ConfigFields({ type, config, onChange, t }) {
             className="input text-xs font-mono resize-y" />
         </div>
       )}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         <Field label="Timeout (ms)" value={config.timeout} onChange={v => set('timeout', +v)} type="number" placeholder="10000" />
         <Field label={t('form.fields.http.sslAlertDays')} value={config.sslAlertDays ?? 30} onChange={v => set('sslAlertDays', +v)} type="number" placeholder="30" hint={t('form.fields.http.sslAlertDaysHint')} />
+        <Field label={t('form.fields.http.responseTimeThreshold')} value={config.responseTimeThreshold ?? 0} onChange={v => set('responseTimeThreshold', +v)} type="number" placeholder="0" hint={t('form.fields.http.responseTimeThresholdHint')} />
       </div>
       <Field label={t('form.fields.http.keyword')} value={config.keyword} onChange={v => set('keyword', v)}
         placeholder={t('form.fields.http.keywordPlaceholder')} hint={t('form.fields.http.keywordHint')} />
@@ -477,6 +478,11 @@ export default function ServiceModal({ monitor, onClose, onSave }) {
   const { t, lang } = useLang();
   const toast = useToast();
   const [testing, setTesting] = useState(false);
+  const [allMonitors, setAllMonitors] = useState([]);
+
+  useEffect(() => {
+    monitorsApi.list().then(setAllMonitors).catch(() => {});
+  }, []);
 
   async function handleTest() {
     setTesting(true);
@@ -495,6 +501,7 @@ export default function ServiceModal({ monitor, onClose, onSave }) {
     name: '', type: 'cloudflare', description: '', category: '',
     enabled: true, checkInterval: 1, reportInterval: 6,
     cardMetric: null, serviceUrl: '', showOnStatusPage: true,
+    dependsOn: [],
     config: TYPE_DEFAULTS.cloudflare.config,
   });
 
@@ -511,6 +518,7 @@ export default function ServiceModal({ monitor, onClose, onSave }) {
         cardMetric: monitor.cardMetric || null,
         serviceUrl: monitor.serviceUrl || '',
         showOnStatusPage: monitor.showOnStatusPage !== false,
+        dependsOn: monitor.dependsOn?.map(id => String(id)) || [],
         config: monitor.config || {},
       });
     }
@@ -594,6 +602,35 @@ export default function ServiceModal({ monitor, onClose, onSave }) {
             <ConfigFields type={form.type} config={form.config}
               onChange={config => setForm(f => ({ ...f, config }))} t={t} />
           </div>
+
+          {allMonitors.filter(m => m._id !== monitor?._id).length > 0 && (
+            <div>
+              <label className="label">{t('form.dependsOn')}</label>
+              <p className="text-xs text-muted mb-2">{t('form.dependsOnHint')}</p>
+              <div className="space-y-1 max-h-32 overflow-y-auto border border-border rounded-lg p-2">
+                {allMonitors.filter(m => m._id !== monitor?._id).map(m => (
+                  <label key={m._id} className="flex items-center gap-2 cursor-pointer py-0.5">
+                    <input
+                      type="checkbox"
+                      className="w-3.5 h-3.5 rounded accent-periwinkle"
+                      checked={form.dependsOn.includes(String(m._id))}
+                      onChange={e => {
+                        const id = String(m._id);
+                        setForm(f => ({
+                          ...f,
+                          dependsOn: e.target.checked
+                            ? [...f.dependsOn, id]
+                            : f.dependsOn.filter(d => d !== id),
+                        }));
+                      }}
+                    />
+                    <span className="text-sm text-thistle">{m.name}</span>
+                    <span className="text-xs text-muted ml-auto">{m.type}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
 
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" checked={form.enabled}

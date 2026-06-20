@@ -31,7 +31,7 @@ async function check(config, lastState) {
     url, method = 'GET', body,
     expectedStatus = 200, keyword, timeout = 10000, rejectUnauthorized = true,
     bearerToken, basicUser, basicPass, customHeaderName, customHeaderValue,
-    sslAlertDays = 30,
+    sslAlertDays = 30, responseTimeThreshold = 0,
   } = config;
 
   if (!url) return { status: 'error', state: null, metrics: null, notifications: [
@@ -119,6 +119,8 @@ async function check(config, lastState) {
   }
 
   const wasOk = lastState?.ok === true;
+  const wasSlow = lastState?.slowAlerted === true;
+  const isSlow = ok && responseTimeThreshold > 0 && responseTime != null && responseTime > responseTimeThreshold;
   const notifications = [];
   if (lastState !== null) {
     if (!ok && wasOk) notifications.push({
@@ -130,6 +132,18 @@ async function check(config, lastState) {
       title: `${url} — De retour`,
       message: `Temps de réponse : ${responseTime}ms`,
       level: 'success', type: 'status_change',
+    });
+
+    // Response time threshold alerts
+    if (isSlow && !wasSlow) notifications.push({
+      title: `${url} — Temps de réponse élevé`,
+      message: `${responseTime}ms (seuil : ${responseTimeThreshold}ms)`,
+      level: 'warning', type: 'response_time',
+    });
+    if (!isSlow && wasSlow) notifications.push({
+      title: `${url} — Temps de réponse normalisé`,
+      message: `${responseTime}ms`,
+      level: 'success', type: 'response_time',
     });
 
     // SSL expiry notifications
@@ -156,8 +170,8 @@ async function check(config, lastState) {
     : null;
 
   return {
-    status: ok ? (sslStatus === 'expired' ? 'warning' : 'online') : (statusCode ? 'warning' : 'offline'),
-    state: { ok, statusCode, responseTime, errMsg, sslDaysLeft: sslInfo?.daysLeft },
+    status: ok ? (isSlow || sslStatus === 'expired' ? 'warning' : 'online') : (statusCode ? 'warning' : 'offline'),
+    state: { ok, statusCode, responseTime, errMsg, sslDaysLeft: sslInfo?.daysLeft, slowAlerted: isSlow },
     metrics: { url, statusCode, responseTime, ok, faviconUrl, errMsg, sslInfo, sslStatus },
     notifications,
   };

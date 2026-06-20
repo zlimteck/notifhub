@@ -23,6 +23,7 @@ const monitorSchema = new mongoose.Schema({
   cardMetric: { type: String, default: null },
   serviceUrl: { type: String, default: '' },
   showOnStatusPage: { type: Boolean, default: true },
+  dependsOn: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Monitor' }],
 }, { timestamps: true });
 
 // Encrypt sensitive config fields before any save

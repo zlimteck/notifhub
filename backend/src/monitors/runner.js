@@ -86,6 +86,23 @@ async function runCheck(monitor) {
   const monitorNotifs = result.notifications || [];
   const hasStatusChange = monitorNotifs.some(n => n.type === 'status_change');
 
+  // Dependency check: suppress down alerts if a parent monitor is also down
+  if (monitor.dependsOn?.length) {
+    const parents = await Monitor.find({ _id: { $in: monitor.dependsOn } }, 'name status').lean();
+    const parentDown = parents.find(p => ['error', 'offline', 'warning'].includes(p.status));
+    if (parentDown) {
+      const before = monitorNotifs.length;
+      for (let i = monitorNotifs.length - 1; i >= 0; i--) {
+        if (monitorNotifs[i].type === 'status_change' && monitorNotifs[i].level !== 'success') {
+          monitorNotifs.splice(i, 1);
+        }
+      }
+      if (monitorNotifs.length < before) {
+        console.log(`[Runner] Alerte supprimée — ${monitor.name} dépend de ${parentDown.name} (${parentDown.status})`);
+      }
+    }
+  }
+
   // Global status-change notifications for monitors that don't handle their own
   if (!hasStatusChange) {
     const wentDown = prevStatus === 'online' && ['error', 'offline', 'warning'].includes(result.status);
