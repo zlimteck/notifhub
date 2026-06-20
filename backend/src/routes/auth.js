@@ -23,7 +23,7 @@ router.get('/me', async (req, res) => {
   if (!header?.startsWith('Bearer ')) return res.status(401).json({ error: 'Non authentifié' });
   try {
     const jwt = require('jsonwebtoken');
-    const SECRET = process.env.JWT_SECRET || 'notifhub-secret-change-me';
+    const SECRET = process.env.JWT_SECRET || 'orveil-secret-change-me';
     const payload = jwt.verify(header.slice(7), SECRET);
     res.json({ username: payload.username });
   } catch {
@@ -37,7 +37,7 @@ router.post('/change-password', async (req, res) => {
   if (!header?.startsWith('Bearer ')) return res.status(401).json({ error: 'Non authentifié' });
   try {
     const jwt = require('jsonwebtoken');
-    const SECRET = process.env.JWT_SECRET || 'notifhub-secret-change-me';
+    const SECRET = process.env.JWT_SECRET || 'orveil-secret-change-me';
     const payload = jwt.verify(header.slice(7), SECRET);
     const { currentPassword, newPassword } = req.body;
     if (!currentPassword || !newPassword) return res.status(400).json({ error: 'Champs requis' });

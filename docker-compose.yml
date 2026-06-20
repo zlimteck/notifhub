@@ -1,16 +1,16 @@
 services:
   mongodb:
     image: mongo:8
-    container_name: notifhub-mongo
+    container_name: orveil-mongo
     restart: unless-stopped
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-notifhub}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASS:-notifhub_pass}
-      MONGO_INITDB_DATABASE: notifhub
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-orveil}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASS:-orveil_pass}
+      MONGO_INITDB_DATABASE: orveil
     volumes:
       - mongo_data:/data/db
     networks:
-      - notifhub
+      - orveil
     healthcheck:
       test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
       interval: 10s
@@ -20,28 +20,28 @@ services:
 
   apprise:
     image: caronc/apprise:latest
-    container_name: notifhub-apprise
+    container_name: orveil-apprise
     restart: unless-stopped
     ports:
       - "8008:8000"
     networks:
-      - notifhub
+      - orveil
 
   app:
-    image: zlimteck/notifhub:latest
-    container_name: notifhub
+    image: zlimteck/orveil:latest
+    container_name: orveil
     restart: unless-stopped
     ports:
       - "3050:5050"
     environment:
-      MONGODB_URI: mongodb://${MONGO_USER:-notifhub}:${MONGO_PASS:-notifhub_pass}@mongodb:27017/notifhub?authSource=admin
+      MONGODB_URI: mongodb://${MONGO_USER:-orveil}:${MONGO_PASS:-orveil_pass}@mongodb:27017/orveil?authSource=admin
       APPRISE_API_URL: http://apprise:8000
       PORT: 5050
       NODE_ENV: production
-      JWT_SECRET: ${JWT_SECRET:-notifhub-change-me-in-production}
+      JWT_SECRET: ${JWT_SECRET:-orveil-change-me-in-production}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-notifhub}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-orveil}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     depends_on:
@@ -50,11 +50,11 @@ services:
       apprise:
         condition: service_started
     networks:
-      - notifhub
+      - orveil
 
 volumes:
   mongo_data:
 
 networks:
-  notifhub:
+  orveil:
     driver: bridge

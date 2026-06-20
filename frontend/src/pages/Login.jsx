@@ -31,8 +31,8 @@ export default function Login() {
     <div className="min-h-screen bg-surface flex items-center justify-center p-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center space-y-2">
-          <img src="/logo.svg" alt="NotifHub" className="w-14 h-14 mx-auto" />
-          <h1 className="text-2xl font-bold text-thistle">NotifHub</h1>
+          <img src="/logo.svg" alt="Orveil" className="w-14 h-14 mx-auto" />
+          <h1 className="text-2xl font-bold text-thistle">Orveil</h1>
           <p className="text-sm text-muted">{t('login.subtitle')}</p>
         </div>
 

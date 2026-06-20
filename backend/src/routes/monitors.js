@@ -28,7 +28,7 @@ router.get('/stats', async (req, res) => {
   res.json({ total, online, warning, error, disabled });
 });
 
-const TYPES = ['cloudflare', 'adguard', 'hms', 'ultracc', 'syncthing', 'http', 'ping', 'proxmox', 'immich', 'portainer', 'ssh', 'heartbeat', 'docker', 'unraid'];
+const TYPES = ['cloudflare', 'adguard', 'hms', 'ultracc', 'syncthing', 'http', 'ping', 'proxmox', 'immich', 'portainer', 'ssh', 'heartbeat', 'docker', 'unraid', 'jellyfin'];
 
 router.get('/:id', async (req, res) => {
   const { id } = req.params;

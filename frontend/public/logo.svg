@@ -1,7 +1,43 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 92 92">
-  <rect width="92" height="92" rx="22" fill="#0F0F12"/>
-  <path d="M22 68 L22 24 L54 68 L54 24" fill="none" stroke="#60A5FA" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="68" cy="22" r="13" fill="#34D399"/>
-  <circle cx="68" cy="22" r="7" fill="#0F0F12"/>
-  <circle cx="68" cy="22" r="4" fill="#34D399"/>
+<svg viewBox="0 0 690 690" role="img" xmlns="http://www.w3.org/2000/svg">
+  <title>Orveil icon</title>
+  <desc>Icône Orveil — œil stylisé avec iris vert celadon et contour bleu periwinkle sur fond sombre</desc>
+
+  <rect width="680" height="680" x="5" y="5" fill="#0F0F12" rx="120"/>
+
+  <g transform="translate(345, 345)">
+    <!-- Eye outline -->
+    <path d="M-195,0 C-130,-90 -68,-125 0,-125 C68,-125 130,-90 195,0 C130,90 68,125 0,125 C-68,125 -130,90 -195,0 Z" fill="none" stroke="#60A5FA" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Dashed arc top -->
+    <path d="M-195,0 C-130,-90 -68,-125 0,-125 C68,-125 130,-90 195,0" fill="none" stroke="#60A5FA" stroke-width="12" stroke-dasharray="38 30" opacity="0.3"/>
+
+    <!-- Iris ring -->
+    <circle cx="0" cy="0" r="70" fill="#0F0F12" stroke="#60A5FA" stroke-width="16"/>
+    <circle cx="0" cy="0" r="70" fill="#60A5FA" opacity="0.06"/>
+
+    <!-- Inner iris fill -->
+    <circle cx="0" cy="0" r="44" fill="#0F0F12"/>
+    <circle cx="0" cy="0" r="44" fill="#34D399" opacity="0.12"/>
+
+    <!-- Pupil -->
+    <circle cx="0" cy="0" r="24" fill="#34D399" opacity="0.92"/>
+
+    <!-- Pupil hole -->
+    <circle cx="0" cy="0" r="11" fill="#0F0F12"/>
+
+    <!-- Glint -->
+    <circle cx="-8" cy="-8" r="4" fill="#60A5FA" opacity="0.75"/>
+
+    <!-- Cardinal tick marks -->
+    <line x1="0" y1="-70" x2="0" y2="-90" stroke="#60A5FA" stroke-width="12" stroke-linecap="round" opacity="0.45"/>
+    <line x1="0" y1="70" x2="0" y2="90" stroke="#60A5FA" stroke-width="12" stroke-linecap="round" opacity="0.45"/>
+    <line x1="-70" y1="0" x2="-90" y2="0" stroke="#60A5FA" stroke-width="12" stroke-linecap="round" opacity="0.45"/>
+    <line x1="70" y1="0" x2="90" y2="0" stroke="#60A5FA" stroke-width="12" stroke-linecap="round" opacity="0.45"/>
+
+    <!-- Diagonal tick marks -->
+    <line x1="49" y1="-49" x2="62" y2="-62" stroke="#34D399" stroke-width="9" stroke-linecap="round" opacity="0.4"/>
+    <line x1="-49" y1="-49" x2="-62" y2="-62" stroke="#34D399" stroke-width="9" stroke-linecap="round" opacity="0.4"/>
+    <line x1="49" y1="49" x2="62" y2="62" stroke="#34D399" stroke-width="9" stroke-linecap="round" opacity="0.4"/>
+    <line x1="-49" y1="49" x2="-62" y2="62" stroke="#34D399" stroke-width="9" stroke-linecap="round" opacity="0.4"/>
+  </g>
 </svg>

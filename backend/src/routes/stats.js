@@ -45,11 +45,29 @@ router.get('/', async (req, res) => {
     // Incidents summary
     const openIncidents = incidents.filter(i => !i.resolvedAt).length;
     const resolvedIncidents = incidents.filter(i => i.resolvedAt).length;
-    const avgDuration = (() => {
-      const resolved = incidents.filter(i => i.duration);
-      if (!resolved.length) return null;
-      return Math.round(resolved.reduce((s, i) => s + i.duration, 0) / resolved.length);
-    })();
+    const resolved = incidents.filter(i => i.duration);
+    const avgDuration = resolved.length
+      ? Math.round(resolved.reduce((s, i) => s + i.duration, 0) / resolved.length)
+      : null;
+
+    // MTTR = avgDuration (alias)
+    const mttr = avgDuration;
+
+    // Severity breakdown
+    const severityCount = { P1: 0, P2: 0, P3: 0, P4: 0 };
+    for (const inc of incidents) {
+      const s = inc.severity || 'P3';
+      severityCount[s] = (severityCount[s] || 0) + 1;
+    }
+
+    // MTTR per severity
+    const mttrBySeverity = {};
+    for (const sev of ['P1','P2','P3','P4']) {
+      const group = resolved.filter(i => (i.severity || 'P3') === sev);
+      mttrBySeverity[sev] = group.length
+        ? Math.round(group.reduce((s, i) => s + i.duration, 0) / group.length)
+        : null;
+    }
 
     // Incidents per day (last 30 days)
     const incidentsByDay = {};
@@ -66,7 +84,7 @@ router.get('/', async (req, res) => {
 
     res.json({
       monitors: { total, enabled, online, alerting },
-      incidents: { open: openIncidents, resolved: resolvedIncidents, avgDuration },
+      incidents: { open: openIncidents, resolved: resolvedIncidents, avgDuration, mttr, severityCount, mttrBySeverity },
       incidentsByDay,
       uptimeByMonitor,
       logsByLevel,

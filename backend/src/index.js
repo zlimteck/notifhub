@@ -42,7 +42,7 @@ async function initAdmin() {
   const count = await User.countDocuments();
   if (count === 0) {
     const username = process.env.ADMIN_USERNAME || 'admin';
-    const password = process.env.ADMIN_PASSWORD || 'notifhub';
+    const password = process.env.ADMIN_PASSWORD || 'orveil';
     await User.create({ username, password });
     console.log(`[Auth] Compte admin créé : ${username} / ${password}`);
     console.log('[Auth] ⚠️  Changez le mot de passe dans Paramètres !');
@@ -55,6 +55,6 @@ if (!process.env.ENCRYPTION_KEY) {
 
 connectDB().then(async () => {
   await initAdmin();
-  app.listen(PORT, () => console.log(`Backend NotifHub sur :${PORT}`));
+  app.listen(PORT, () => console.log(`Backend Orveil sur :${PORT}`));
   runner.start();
 });

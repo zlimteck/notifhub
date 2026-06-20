@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 
-const SECRET = process.env.JWT_SECRET || 'notifhub-secret-change-me';
+const SECRET = process.env.JWT_SECRET || 'orveil-secret-change-me';
 
 async function authMiddleware(req, res, next) {
   const header = req.headers.authorization;

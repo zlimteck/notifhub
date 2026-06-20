@@ -61,8 +61,8 @@ function SidebarHeader() {
   return (
     <div className="px-5 py-4 border-b border-border">
       <div className="flex items-center gap-2.5">
-        <img src="/logo.svg" alt="NotifHub" className="w-7 h-7" />
-        <span className="text-lg font-bold tracking-tight text-thistle">NotifHub</span>
+        <img src="/logo.svg" alt="Orveil" className="w-7 h-7" />
+        <span className="text-lg font-bold tracking-tight text-thistle">Orveil</span>
       </div>
       <p className="text-xs text-muted mt-1">{t('nav.subtitle')}</p>
       <div className="flex items-center justify-center gap-2 mt-2.5">
@@ -151,8 +151,8 @@ export default function Layout() {
             <Menu size={20} />
           </button>
           <div className="flex items-center gap-2">
-            <img src="/logo.svg" alt="NotifHub" className="w-5 h-5" />
-            <span className="font-bold text-thistle text-sm">NotifHub</span>
+            <img src="/logo.svg" alt="Orveil" className="w-5 h-5" />
+            <span className="font-bold text-thistle text-sm">Orveil</span>
           </div>
           <div className="w-8" />
         </header>

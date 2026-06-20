@@ -65,15 +65,12 @@ async function runCheck(monitor) {
 
   // Incident tracking
   if (['error', 'offline', 'warning'].includes(result.status)) {
-    const existingOpen = await Incident.findOne({ monitorId: monitor._id, resolvedAt: null });
-    if (!existingOpen) {
-      Incident.create({
-        monitorId: monitor._id,
-        monitorName: monitor.name,
-        monitorType: monitor.type,
-        triggerStatus: result.status,
-      }).catch(() => {});
-    }
+    const severity = result.status === 'offline' ? 'P1' : result.status === 'error' ? 'P2' : 'P3';
+    Incident.findOneAndUpdate(
+      { monitorId: monitor._id, resolvedAt: null },
+      { $setOnInsert: { monitorId: monitor._id, monitorName: monitor.name, monitorType: monitor.type, triggerStatus: result.status, severity, startedAt: new Date() } },
+      { upsert: true, new: false }
+    ).catch(() => {});
   } else if (result.status === 'online') {
     const open = await Incident.findOne({ monitorId: monitor._id, resolvedAt: null }).sort({ startedAt: -1 });
     if (open) {
@@ -125,10 +122,8 @@ async function runCheck(monitor) {
     }
   }
 
-  // Rate limiting: suppress repeated down/up alerts within the cooldown window
-  // to avoid notification spam when a service flaps.
-  const ALERT_COOLDOWN_MS = 15 * 60 * 1000;
-  let { lastDownAt, lastDownNotified } = monitor;
+  // Dedup: one notification when service goes down, one when it recovers — nothing in between.
+  // Atomic updates prevent duplicate notifications from concurrent checks.
   const toSend = [];
 
   for (const notif of monitorNotifs) {
@@ -140,24 +135,29 @@ async function runCheck(monitor) {
     const isRecovery = notif.level === 'success';
 
     if (isDown) {
-      const inCooldown = lastDownAt && (Date.now() - new Date(lastDownAt).getTime() < ALERT_COOLDOWN_MS);
-      if (!inCooldown) {
+      // Only notify if we haven't already notified for this outage.
+      const claimed = await Monitor.findOneAndUpdate(
+        { _id: monitor._id, lastDownNotified: { $ne: true } },
+        { $set: { lastDownNotified: true, lastDownAt: new Date() } },
+        { new: false }
+      );
+      if (claimed) {
         toSend.push(notif);
-        lastDownAt = new Date();
-        lastDownNotified = true;
       } else {
-        lastDownNotified = false;
-        console.log(`[Runner] Rate limited (flap): ${monitor.name} — ${notif.title}`);
+        console.log(`[Runner] Suppressed (already notified): ${monitor.name}`);
       }
     } else if (isRecovery) {
-      if (lastDownNotified) toSend.push(notif);
-      lastDownNotified = false;
+      // Only notify recovery if a down notification was previously sent.
+      const claimed = await Monitor.findOneAndUpdate(
+        { _id: monitor._id, lastDownNotified: true },
+        { $set: { lastDownNotified: false } },
+        { new: false }
+      );
+      if (claimed) toSend.push(notif);
     } else {
       toSend.push(notif);
     }
   }
-
-  await Monitor.findByIdAndUpdate(monitor._id, { lastDownAt, lastDownNotified });
 
   for (const notif of toSend) {
     await sendNotification({ ...notif, monitorId: monitor._id, monitorName: monitor.name });
@@ -243,7 +243,7 @@ async function checkWeeklyReport() {
       message += '\n\nTous les services sont en ligne.';
     }
 
-    await sendNotification({ title: 'Rapport hebdomadaire NotifHub', message, level: 'info', type: 'report' });
+    await sendNotification({ title: 'Rapport hebdomadaire Orveil', message, level: 'info', type: 'report' });
     await Settings.updateOne({ key: 'global' }, { 'weeklyReport.lastSentAt': now });
     console.log('[Runner] Rapport hebdomadaire envoyé');
   } catch (err) {

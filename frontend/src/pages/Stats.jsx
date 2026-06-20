@@ -55,6 +55,7 @@ export default function Stats() {
   if (!data)   return <div className="p-6 text-red-400 text-sm">Erreur de chargement</div>;
 
   const { monitors, incidents, uptimeByMonitor, logsByLevel } = data;
+  const totalSev = Object.values(incidents.severityCount || {}).reduce((s, v) => s + v, 0);
   const totalNotifs = Object.values(logsByLevel).reduce((s, v) => s + v, 0);
 
   return (
@@ -76,11 +77,37 @@ export default function Stats() {
 
       <div>
         <h2 className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">{t('stats.incidents')}</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <StatCard icon={AlertTriangle} label={t('stats.open')} value={incidents.open} color={incidents.open > 0 ? 'text-red-400' : 'text-muted'} />
           <StatCard icon={CheckCircle} label={t('stats.resolved')} value={incidents.resolved} color="text-celadon" />
-          <StatCard icon={TrendingUp} label={t('stats.avgDuration')} value={duration(incidents.avgDuration)} />
+          <StatCard icon={TrendingUp} label="MTTR" value={duration(incidents.mttr)} />
+          <StatCard icon={TrendingUp} label={t('stats.avgDuration')} value={duration(incidents.avgDuration)} color="text-muted" />
         </div>
+
+        {totalSev > 0 && (
+          <div className="card px-4 py-3 mt-3 space-y-2">
+            <p className="text-xs font-semibold text-muted uppercase tracking-wider">{t('stats.severityBreakdown')}</p>
+            {[
+              { key: 'P1', color: 'bg-red-400',     label: t('stats.severity.P1') },
+              { key: 'P2', color: 'bg-amber-400',   label: t('stats.severity.P2') },
+              { key: 'P3', color: 'bg-periwinkle',  label: t('stats.severity.P3') },
+              { key: 'P4', color: 'bg-granite',     label: t('stats.severity.P4') },
+            ].map(({ key, color, label }) => {
+              const count = incidents.severityCount?.[key] || 0;
+              const mttr  = incidents.mttrBySeverity?.[key];
+              return (
+                <div key={key} className="flex items-center gap-3">
+                  <span className={`text-xs font-semibold w-6 ${color.replace('bg-','text-')}`}>{key}</span>
+                  <div className="flex-1 h-1.5 bg-granite-3 rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full ${color}`} style={{ width: totalSev > 0 ? `${(count / totalSev) * 100}%` : '0%' }} />
+                  </div>
+                  <span className="text-xs text-muted w-4 text-right">{count}</span>
+                  {mttr && <span className="text-xs text-muted/60 w-16 text-right">MTTR {duration(mttr)}</span>}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div>

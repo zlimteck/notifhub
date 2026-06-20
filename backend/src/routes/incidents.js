@@ -16,6 +16,15 @@ router.get('/', async (req, res) => {
   res.json(incidents);
 });
 
+// PATCH /api/incidents/:id/severity
+router.patch('/:id/severity', async (req, res) => {
+  const { severity } = req.body;
+  if (!['P1','P2','P3','P4'].includes(severity)) return res.status(400).json({ error: 'Sévérité invalide' });
+  const incident = await Incident.findByIdAndUpdate(req.params.id, { severity }, { new: true });
+  if (!incident) return res.status(404).json({ error: 'Incident introuvable' });
+  res.json(incident);
+});
+
 // POST /api/incidents/:id/acknowledge
 router.post('/:id/acknowledge', async (req, res) => {
   const incident = await Incident.findByIdAndUpdate(

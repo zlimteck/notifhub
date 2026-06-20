@@ -7,7 +7,8 @@ const schema = new mongoose.Schema({
   startedAt:     { type: Date, default: Date.now },
   resolvedAt:    { type: Date, default: null },
   duration:      { type: Number, default: null }, // ms
-  triggerStatus:   { type: String }, // 'error' | 'offline'
+  triggerStatus:   { type: String }, // 'error' | 'offline' | 'warning'
+  severity:        { type: String, enum: ['P1','P2','P3','P4'], default: 'P3' },
   acknowledgedAt:  { type: Date, default: null },
 });
 

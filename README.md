@@ -1,12 +1,12 @@
 <div align="center">
-  <img src="docs/logo.svg" alt="NotifHub" width="80" />
-  <h1>NotifHub</h1>
+  <img src="docs/logo.svg" alt="Orveil" width="80" />
+  <h1>Orveil</h1>
   <p>Unified monitoring dashboard with notifications via <a href="https://github.com/caronc/apprise/wiki">Apprise</a>.<br>Monitor your self-hosted services, get alerted on incidents, and send notifications to any channel.</p>
 
-  [![Image Size](https://img.shields.io/docker/image-size/zlimteck/notifhub/latest?style=flat-square&logo=docker&logoColor=white&color=2496ED)](https://hub.docker.com/r/zlimteck/notifhub)
-  [![CI](https://img.shields.io/github/actions/workflow/status/zlimteck/notifhub/docker.yml?style=flat-square&logo=github-actions&logoColor=white&label=build)](https://github.com/zlimteck/notifhub/actions/workflows/docker.yml)
+  [![Image Size](https://img.shields.io/docker/image-size/zlimteck/orveil/latest?style=flat-square&logo=docker&logoColor=white&color=2496ED)](https://hub.docker.com/r/zlimteck/orveil)
+  [![CI](https://img.shields.io/github/actions/workflow/status/zlimteck/orveil/docker.yml?style=flat-square&logo=github-actions&logoColor=white&label=build)](https://github.com/zlimteck/orveil/actions/workflows/docker.yml)
   [![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
-  [![Platform](https://img.shields.io/badge/platform-amd64%20%7C%20arm64-lightgrey?style=flat-square)](https://hub.docker.com/r/zlimteck/notifhub)
+  [![Platform](https://img.shields.io/badge/platform-amd64%20%7C%20arm64-lightgrey?style=flat-square)](https://hub.docker.com/r/zlimteck/orveil)
 </div>
 
 ![Dashboard](docs/screenshots/1-Dashboard.png)
@@ -15,14 +15,16 @@
 ## Features
 
 - **Unified dashboard** — status overview of all your services at a glance, grid or list view
-- **17 monitor types** — HTTP/HTTPS, Ping/TCP, SSH, Proxmox, Cloudflare, AdGuard DNS, AdGuard Home, Home Assistant, Portainer, Docker, Syncthing, Immich, HostMyServers, Ultra.cc, Heartbeat, Unraid, Speedtest Tracker
+- **18 monitor types** — HTTP/HTTPS, Ping/TCP, SSH, Proxmox, Cloudflare, AdGuard DNS, AdGuard Home, Home Assistant, Portainer, Docker, Syncthing, Immich, HostMyServers, Ultra.cc, Heartbeat, Unraid, Speedtest Tracker, Jellyfin
 - **Public status page** — shareable `/status` page (no login required) with uptime bars, open incidents, and 90-day history per service; toggle visibility per service
 - **Search & sort** — filter cards by name, sort by status / name / manual order
 - **Drag & drop reordering** — manually reorder cards in grid view
 - **Category grouping** — assign a category to each service to group cards on the dashboard
-- **Incident tracking** — automatic incident open/close with duration history
+- **Incident tracking** — automatic incident open/close with duration history; P1–P4 severity (auto-assigned, manually overridable); MTTR and severity breakdown on the Stats page
 - **Maintenance windows** — per-service maintenance mode (30 min to 8 h presets or custom) — no alerts or incidents during the window
-- **Statistics** — 30-day global view: uptime per service, incident count, average duration, notifications sent
+- **Monitor dependencies** — link a monitor to a parent; down alerts are suppressed when the parent is also down
+- **Statistics** — 30-day global view: uptime per service, incident count, MTTR, severity breakdown, notifications sent
+- **Backup & restore** — export all monitors and settings as JSON; import on another instance (Settings page)
 - **Metric graphs** — optional sparkline graphs on dashboard cards (toggle in settings)
 - **Apprise notifications** — Pushover, Telegram, Discord, Slack, email, and [100+ more](https://github.com/caronc/apprise/wiki)
 - **Weekly report** — optional weekly Apprise summary (services in error, average uptime)
@@ -48,8 +50,8 @@
 **Prerequisites:** Docker + Docker Compose
 
 ```bash
-git clone https://github.com/zlimteck/notifhub.git
-cd notifhub
+git clone https://github.com/zlimteck/orveil.git
+cd orveil
 cp .env.example .env
 # Edit .env — change JWT_SECRET and ADMIN_PASSWORD before exposing publicly
 docker compose up -d
@@ -60,7 +62,7 @@ docker compose up -d
 | App (frontend + API) | http://localhost:3050 |
 | Apprise API | http://localhost:8008 |
 
-Default credentials: `admin` / `notifhub`
+Default credentials: `admin` / `orveil`
 
 ## Available monitors
 
@@ -83,16 +85,17 @@ Default credentials: `admin` / `notifhub`
 | **Unraid** | Array state, disk usage, CPU / RAM, temperature via GraphQL API |
 | **Home Assistant** | Instance status, version, and selected entity states via Long-lived access token. Numeric entities (temperature, humidity, power…) can be graphed — non-numeric states (on/off, home/away) are displayed but not graphable |
 | **Speedtest Tracker** | Latest speedtest result — download, upload, ping, jitter |
+| **Jellyfin** | Active sessions, library counts (movies / series / songs), server version |
 
 ## Alerts sent per monitor type
 
-All monitor types automatically send a **down** alert when status changes to error/offline, and a **recovery** alert when coming back online. Incidents are opened on first alert and closed on recovery.
+All monitor types send exactly **one alert when going down** and **one alert on recovery** — no repeat notifications while the service stays down. Incidents are opened on first alert and closed on recovery.
 
 Additional type-specific alerts:
 
 | Type | Extra alerts |
 |------|-------------|
-| **HTTP** | SSL expiry warning · SSL expired |
+| **HTTP** | SSL expiry warning · SSL expired · Response time threshold exceeded |
 | **SSH** | High CPU · High RAM · High disk usage |
 | **Proxmox** | High CPU · High RAM |
 | **Cloudflare** | Per-tunnel offline / restored |
@@ -121,7 +124,7 @@ Full list: https://github.com/caronc/apprise/wiki
 
 ## MCP Server
 
-NotifHub exposes a [Model Context Protocol](https://modelcontextprotocol.io) server so AI assistants can query your monitoring data directly.
+Orveil exposes a [Model Context Protocol](https://modelcontextprotocol.io) server so AI assistants can query your monitoring data directly.
 
 ### Tools available
 
@@ -133,7 +136,7 @@ NotifHub exposes a [Model Context Protocol](https://modelcontextprotocol.io) ser
 | `get_stats` | Global counters — total, online, offline, warning, error, disabled |
 | `trigger_check` | Trigger an immediate check for a monitor |
 
-Resources `notifhub://monitors/{name}` are also available for direct URI access.
+Resources `orveil://monitors/{name}` are also available for direct URI access.
 
 ### Streamable HTTP (remote)
 
@@ -142,7 +145,7 @@ The MCP endpoint is available at `/api/mcp`. The API key is auto-generated on fi
 ```json
 {
   "mcpServers": {
-    "notifhub": {
+    "orveil": {
       "url": "http://your-server:3050/api/mcp",
       "type": "streamable-http",
       "headers": {
@@ -158,11 +161,11 @@ The MCP endpoint is available at `/api/mcp`. The API key is auto-generated on fi
 ```json
 {
   "mcpServers": {
-    "notifhub": {
+    "orveil": {
       "command": "node",
-      "args": ["/path/to/notifhub/backend/mcp-stdio.js"],
+      "args": ["/path/to/orveil/backend/mcp-stdio.js"],
       "env": {
-        "MONGO_URI": "mongodb://notifhub:notifhub_pass@localhost:27017/notifhub"
+        "MONGO_URI": "mongodb://orveil:orveil_pass@localhost:27017/orveil"
       }
     }
   }
@@ -175,12 +178,12 @@ The same API key also works as a Bearer token on all `/api` REST endpoints.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `MONGO_USER` | `notifhub` | MongoDB username |
-| `MONGO_PASS` | `notifhub_pass` | MongoDB password |
-| `JWT_SECRET` | `notifhub-change-me-in-production` | JWT signing secret — **change this** |
+| `MONGO_USER` | `orveil` | MongoDB username |
+| `MONGO_PASS` | `orveil_pass` | MongoDB password |
+| `JWT_SECRET` | `orveil-change-me-in-production` | JWT signing secret — **change this** |
 | `ENCRYPTION_KEY` | *(none)* | AES-256-GCM key for encrypting sensitive monitor credentials at rest — **strongly recommended** |
 | `ADMIN_USERNAME` | `admin` | Admin account username |
-| `ADMIN_PASSWORD` | `notifhub` | Admin account password — **change this** |
+| `ADMIN_PASSWORD` | `orveil` | Admin account password — **change this** |
 
 ### Setting up encryption at rest
 

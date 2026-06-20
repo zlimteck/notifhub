@@ -32,6 +32,7 @@ const TYPE_DEFAULTS = {
   unraid:     { checkInterval: 5,  reportInterval: 24, config: { apiUrl: '', apiKey: '', rejectUnauthorized: true } },
   speedtest:      { checkInterval: 60, reportInterval: 24, config: { apiUrl: '', apiKey: '', rejectUnauthorized: true } },
   homeassistant:  { checkInterval: 5,  reportInterval: 24, config: { url: '', token: '', entities: [], rejectUnauthorized: true } },
+  jellyfin:       { checkInterval: 5,  reportInterval: 24, config: { apiUrl: '', apiKey: '', rejectUnauthorized: true } },
 };
 
 const TYPE_LABELS = {
@@ -52,6 +53,7 @@ const TYPE_LABELS = {
   unraid:     'Unraid',
   speedtest:     'Speedtest Tracker',
   homeassistant: 'Home Assistant',
+  jellyfin:      'Jellyfin',
 };
 
 function Field({ label, value, onChange, placeholder, type = 'text', hint }) {
@@ -467,6 +469,17 @@ function ConfigFields({ type, config, onChange, t }) {
       <Field label="API Key" value={config.apiKey} onChange={v => set('apiKey', v)}
         placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
         hint={t('form.fields.speedtest.apiKeyHint')} />
+      <TlsToggle config={config} set={set} t={t} />
+    </>
+  );
+
+  if (type === 'jellyfin') return (
+    <>
+      <Field label="URL Jellyfin" value={config.apiUrl} onChange={v => set('apiUrl', v)}
+        placeholder="https://jellyfin.example.com" />
+      <Field label="API Key" value={config.apiKey} onChange={v => set('apiKey', v)}
+        placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        hint={t('form.fields.jellyfin.apiKeyHint')} />
       <TlsToggle config={config} set={set} t={t} />
     </>
   );

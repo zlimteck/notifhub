@@ -68,7 +68,7 @@ function text(str) {
 
 function createServer() {
   const server = new Server(
-    { name: 'notifhub', version: '1.0.0' },
+    { name: 'orveil', version: '1.0.0' },
     { capabilities: { tools: {}, resources: {} } }
   );
 
@@ -100,11 +100,11 @@ function createServer() {
     return { tools };
   });
 
-  // Resource template: notifhub://monitors/{name}
+  // Resource template: orveil://monitors/{name}
   server.setRequestHandler(ListResourceTemplatesRequestSchema, async () => ({
     resourceTemplates: [
       {
-        uriTemplate: 'notifhub://monitors/{name}',
+        uriTemplate: 'orveil://monitors/{name}',
         name: 'Monitor by name',
         description: 'Current status and metrics for a specific monitor. Use the exact service name.',
         mimeType: 'application/json',
@@ -118,7 +118,7 @@ function createServer() {
     const monitors = await Monitor.find().sort({ position: 1, name: 1 }).lean();
     return {
       resources: monitors.map(m => ({
-        uri:         `notifhub://monitors/${encodeURIComponent(m.name)}`,
+        uri:         `orveil://monitors/${encodeURIComponent(m.name)}`,
         name:        m.name,
         description: `[${m.type}] ${m.enabled ? m.status : 'disabled'}${m.description ? ' — ' + m.description : ''}`,
         mimeType:    'application/json',
@@ -129,7 +129,7 @@ function createServer() {
   // Read a monitor resource by URI
   server.setRequestHandler(ReadResourceRequestSchema, async (req) => {
     const { uri } = req.params;
-    const match = uri.match(/^notifhub:\/\/monitors\/(.+)$/);
+    const match = uri.match(/^orveil:\/\/monitors\/(.+)$/);
     if (!match) throw new Error(`Unknown resource URI: ${uri}`);
 
     const name = decodeURIComponent(match[1]);

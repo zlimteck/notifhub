@@ -10,14 +10,14 @@ function buildUri() {
     const pass = process.env.MONGO_PASS;
     const host = process.env.MONGO_HOST || 'mongodb';
     const port = process.env.MONGO_PORT || '27017';
-    const db   = process.env.MONGO_DB   || 'notifhub';
+    const db   = process.env.MONGO_DB   || 'orveil';
 
     if (user && pass) {
       return `mongodb://${encodeURIComponent(user)}:${encodeURIComponent(pass)}@${host}:${port}/${db}?authSource=admin`;
     }
     return uri;
   }
-  return 'mongodb://localhost:27017/notifhub';
+  return 'mongodb://localhost:27017/orveil';
 }
 
 async function connectDB() {

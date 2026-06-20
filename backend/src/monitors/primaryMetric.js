@@ -17,6 +17,7 @@ function primaryMetric(type, metrics) {
     case 'docker':     return metrics.containersRunning ?? null;
     case 'unraid':     return metrics.diskPct ?? null;
     case 'speedtest':      return metrics.downloadMbps ?? null;
+    case 'jellyfin':       return metrics.activeSessions ?? null;
     case 'homeassistant': {
       const key = Object.keys(metrics).find(k => k.startsWith('entity__'));
       return key ? metrics[key] : (metrics.activeEntities ?? null);

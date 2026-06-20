@@ -46,6 +46,12 @@ const CONFIG = {
     { key: 'photos',  fr: 'Photos', en: 'Photos',  unit: '' },
     { key: 'videos',  fr: 'Vidéos', en: 'Videos',  unit: '' },
   ],
+  jellyfin: [
+    { key: 'activeSessions', fr: 'Sessions actives', en: 'Active sessions', unit: '' },
+    { key: 'movies',         fr: 'Films',            en: 'Movies',          unit: '' },
+    { key: 'series',         fr: 'Séries',           en: 'Series',          unit: '' },
+    { key: 'songs',          fr: 'Musiques',         en: 'Songs',           unit: '' },
+  ],
   portainer: [
     { key: 'containersRunning', fr: 'Containers actifs',  en: 'Running containers', unit: '' },
     { key: 'containersStopped', fr: 'Containers arrêtés', en: 'Stopped containers', unit: '' },

@@ -1,5 +1,5 @@
 import React from 'react';
-import { siCloudflare, siAdguard, siSyncthing, siProxmox, siImmich, siPortainer, siHomeassistant } from 'simple-icons';
+import { siCloudflare, siAdguard, siSyncthing, siProxmox, siImmich, siPortainer, siHomeassistant, siJellyfin } from 'simple-icons';
 import { Globe, Activity, Terminal, HeartPulse, Gauge } from 'lucide-react';
 
 function SimpleIcon({ icon, size = 20 }) {
@@ -67,6 +67,7 @@ const FALLBACKS = {
   syncthing:  ({ size }) => <SimpleIcon icon={siSyncthing}  size={size} />,
   proxmox:    ({ size }) => <SimpleIcon icon={siProxmox}    size={size} />,
   immich:     ({ size }) => <SimpleIcon icon={siImmich}     size={size} />,
+  jellyfin:   ({ size }) => <SimpleIcon icon={siJellyfin}  size={size} />,
   portainer:  ({ size }) => <SimpleIcon icon={siPortainer}  size={size} />,
   hms:        ({ size }) => <HmsIcon size={size} />,
   ultracc:    ({ size }) => <UltraccIcon size={size} />,
@@ -114,7 +115,7 @@ export default function ServiceIcon({ type, size = 20, url, faviconUrl, serviceU
 
   // Some self-hosted types require auth even for /favicon.ico — never attempt a
   // live browser fetch for these, it produces 401/404 console errors.
-  const AUTH_GATED = new Set(['adguardhome', 'homeassistant', 'proxmox', 'portainer', 'immich', 'syncthing', 'unraid']);
+  const AUTH_GATED = new Set(['adguardhome', 'homeassistant', 'proxmox', 'portainer', 'immich', 'syncthing', 'unraid', 'jellyfin']);
   const faviconSrc = (() => {
     if (faviconUrl) return faviconUrl;
     if (AUTH_GATED.has(type)) return null;

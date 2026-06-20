@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { settings as api, auth as authApi } from '../api';
-import { Save, Send, Info, KeyRound, CalendarClock, BarChart2, Globe, Copy, Check, RefreshCw, Server } from 'lucide-react';
+import { Save, Send, Info, KeyRound, CalendarClock, BarChart2, Globe, Copy, Check, RefreshCw, Server, Download, Upload, AlertTriangle } from 'lucide-react';
 import { useLang } from '../context/LangContext';
 import { useToast } from '../context/ToastContext';
 
@@ -61,6 +61,7 @@ export default function Settings() {
   const [loading, setLoading] = useState(true);
   const [mcpApiKey, setMcpApiKey] = useState('');
   const [copied, setCopied] = useState(false);
+  const [importing, setImporting] = useState(false);
 
   useEffect(() => {
     api.get()
@@ -109,6 +110,37 @@ export default function Settings() {
       toast.add(r.sent ? t('settings.testOk') : t('settings.testNoUrls'), r.sent ? 'success' : 'warning');
     } catch { toast.add(t('settings.testError'), 'error'); }
     setTesting(false);
+  }
+
+  async function handleExport() {
+    try {
+      const data = await api.exportData();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `orveil-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch { toast.add(t('settings.backup.exportError'), 'error'); }
+  }
+
+  async function handleImport(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    setImporting(true);
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      if (!data.version || !Array.isArray(data.monitors)) throw new Error('Format invalide');
+      const r = await api.importData({ monitors: data.monitors, settings: data.settings });
+      const msg = t('settings.backup.importSuccess').replace('{{created}}', r.created).replace('{{updated}}', r.updated);
+      toast.add(msg, 'success');
+    } catch (err) {
+      toast.add(err.message || t('settings.backup.importError'), 'error');
+    }
+    setImporting(false);
   }
 
   if (loading) return <div className="p-6 text-muted">{t('settings.loading')}</div>;
@@ -363,8 +395,29 @@ export default function Settings() {
         <div className="space-y-1">
           <p className="text-xs text-muted">{t('settings.mcp.stdioHint')}</p>
           <div className="bg-granite-3/60 border border-border rounded-xl px-3 py-2 font-mono text-xs text-thistle">
-            node /chemin/vers/notifhub/backend/mcp-stdio.js
+            node /chemin/vers/orveil/backend/mcp-stdio.js
           </div>
+        </div>
+      </div>
+
+      <div className="card space-y-4">
+        <h2 className="font-semibold text-thistle text-sm flex items-center gap-2">
+          <Download size={15} className="text-periwinkle" />
+          {t('settings.backup.title')}
+        </h2>
+        <p className="text-xs text-muted">{t('settings.backup.hint')}</p>
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-400/5 border border-amber-400/20 text-xs text-amber-400">
+          <AlertTriangle size={13} className="shrink-0" />
+          {t('settings.backup.warning')}
+        </div>
+        <div className="flex gap-3">
+          <button onClick={handleExport} className="btn-ghost border border-border px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+            <Download size={14} /> {t('settings.backup.export')}
+          </button>
+          <label className={`btn-ghost border border-border px-4 py-2 rounded-lg text-sm flex items-center gap-2 cursor-pointer ${importing ? 'opacity-50 pointer-events-none' : ''}`}>
+            <Upload size={14} /> {importing ? t('settings.backup.importing') : t('settings.backup.import')}
+            <input type="file" accept=".json" className="hidden" onChange={handleImport} />
+          </label>
         </div>
       </div>
 

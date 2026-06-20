@@ -25,7 +25,7 @@ export default function NotFound() {
       <div className="w-full max-w-md text-center animate-fade-in-up">
 
         <div className="relative inline-flex items-center justify-center mb-8">
-          <img src="/logo.svg" alt="NotifHub" className="w-16 h-16 opacity-40" />
+          <img src="/logo.svg" alt="Orveil" className="w-16 h-16 opacity-40" />
           <span className="absolute -top-1 -right-1 flex items-center justify-center">
             <span className="absolute w-4 h-4 rounded-full bg-red-500 opacity-30 scale-150 animate-ping" />
             <span className="w-3 h-3 rounded-full bg-red-500 animate-pulse-red" />

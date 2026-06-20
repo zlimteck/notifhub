@@ -1,7 +1,7 @@
 const axios = require('axios');
 const https = require('https');
 
-const QUERY = `query NotifHub {
+const QUERY = `query Orveil {
   info {
     os { uptime }
     cpu { brand cores threads }

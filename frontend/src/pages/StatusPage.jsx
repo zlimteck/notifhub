@@ -267,7 +267,7 @@ export default function StatusPage() {
         )}
 
         <p className="text-center text-xs text-muted/40 pt-2 border-t border-border">
-          {footerText || `${t('statusPage.poweredBy')} NotifHub`}
+          {footerText || `${t('statusPage.poweredBy')} Orveil`}
         </p>
       </div>
     </div>

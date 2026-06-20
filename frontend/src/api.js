@@ -52,6 +52,8 @@ export const settings = {
   save: (data) => api.put('/settings', data).then(r => r.data),
   test: () => api.post('/settings/test').then(r => r.data),
   regenerateMcpKey: () => api.post('/settings/mcp/regenerate').then(r => r.data),
+  exportData: () => api.get('/settings/export').then(r => r.data),
+  importData: (data) => api.post('/settings/import', data).then(r => r.data),
 };
 
 export const history = {
@@ -63,6 +65,7 @@ export const history = {
 export const incidents = {
   list: (params) => api.get('/incidents', { params }).then(r => r.data),
   acknowledge: (id) => api.post(`/incidents/${id}/acknowledge`).then(r => r.data),
+  setSeverity: (id, severity) => api.patch(`/incidents/${id}/severity`, { severity }).then(r => r.data),
   delete: (id) => api.delete(`/incidents/${id}`).then(r => r.data),
 };
 

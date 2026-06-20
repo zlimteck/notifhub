@@ -16,4 +16,5 @@ module.exports = {
   unraid:     require('./unraid'),
   speedtest:      require('./speedtest'),
   homeassistant:  require('./homeassistant'),
+  jellyfin:       require('./jellyfin'),
 };
