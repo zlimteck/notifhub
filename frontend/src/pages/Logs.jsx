@@ -80,6 +80,7 @@ export default function Logs() {
   const [data, setData] = useState({ logs: [], total: 0 });
   const [monitors, setMonitors] = useState([]);
   const [filter, setFilter] = useState({ level: '', monitorId: '', limit: 50 });
+  const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const locale = lang === 'fr' ? 'fr-FR' : 'en-GB';
 
@@ -100,6 +101,11 @@ export default function Logs() {
     await api.clear();
     load();
   }
+
+  const q = search.trim().toLowerCase();
+  const displayed = q
+    ? data.logs.filter(l => l.title?.toLowerCase().includes(q) || l.message?.toLowerCase().includes(q) || l.monitorName?.toLowerCase().includes(q))
+    : data.logs;
 
   const n = data.total;
   const subtitle = `${n} ${n !== 1 ? t('logs.subtitle_many') : t('logs.subtitle_one')}`;
@@ -124,6 +130,13 @@ export default function Logs() {
       <Composer onSent={load} />
 
       <div className="flex flex-wrap gap-2">
+        <input
+          type="search"
+          className="input h-9 text-sm flex-1 min-w-48"
+          placeholder={lang === 'fr' ? 'Rechercher…' : 'Search…'}
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
         <select className="select w-full sm:w-40" value={filter.level}
           onChange={e => setFilter(f => ({ ...f, level: e.target.value }))}>
           <option value="">{t('logs.allLevels')}</option>
@@ -135,7 +148,7 @@ export default function Logs() {
         <select className="select w-full sm:w-52" value={filter.monitorId}
           onChange={e => setFilter(f => ({ ...f, monitorId: e.target.value }))}>
           <option value="">{t('logs.allServices')}</option>
-          {monitors.map(m => <option key={m._id} value={m._id}>{m.name}</option>)}
+          {[...monitors].sort((a,b) => a.name.localeCompare(b.name)).map(m => <option key={m._id} value={m._id}>{m.name}</option>)}
         </select>
         <select className="select w-full sm:w-32" value={filter.limit}
           onChange={e => setFilter(f => ({ ...f, limit: +e.target.value }))}>
@@ -154,7 +167,7 @@ export default function Logs() {
       )}
 
       <div className="space-y-2">
-        {data.logs.map(log => (
+        {displayed.map(log => (
           <div key={log._id} className="card flex items-start gap-3 py-3 px-4">
             <span className={`shrink-0 mt-1 text-sm ${LEVEL_DOT[log.level]}`}>●</span>
             <div className="flex-1 min-w-0">

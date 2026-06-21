@@ -19,6 +19,7 @@ async function check(config, lastState) {
 
   const base = apiUrl.replace(/\/$/, '');
 
+  const start = Date.now();
   try {
     // Auto-detect node name if default 'pve' was used but doesn't match
     let resolvedNode = node;
@@ -58,17 +59,19 @@ async function check(config, lastState) {
         notifications.push({ title: `RAM Proxmox saturée`, message: `RAM à ${memPct}% sur ${node}`, level: 'warning', type: 'status_change' });
     }
 
+    const responseTime = Date.now() - start;
     const state = { cpuPct, memPct, vmRunning, lxcRunning };
     const metrics = {
       node, cpuPct, memPct,
       vmTotal: vms.length, vmRunning,
       lxcTotal: lxcs.length, lxcRunning,
       uptime: ns.uptime,
+      responseTime,
     };
 
     return { status: 'online', state, metrics, notifications };
   } catch (err) {
-    return { status: 'error', state: lastState, metrics: null, notifications: [
+    return { status: 'error', lastError: err.message, state: lastState, metrics: null, notifications: [
       { title: 'Proxmox — Erreur API', message: err.message, level: 'error', type: 'status_change' }
     ]};
   }

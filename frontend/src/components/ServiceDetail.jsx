@@ -8,6 +8,55 @@ import ServiceIcon from './ServiceIcon';
 import StatusBadge from './StatusBadge';
 import Sparkline from './Sparkline';
 
+const STATUS_COLOR = {
+  online:  'bg-celadon',
+  offline: 'bg-red-500',
+  error:   'bg-red-500',
+  warning: 'bg-amber-400',
+  unknown: 'bg-granite/40',
+};
+
+function StatusTimeline({ points, period, lang }) {
+  const [tooltip, setTooltip] = useState(null);
+  if (!points || points.length === 0) return null;
+  const locale = lang === 'fr' ? 'fr-FR' : 'en-GB';
+  const periodLabel = period === 24 ? '−24h' : (lang === 'fr' ? '−7j' : '−7d');
+
+  return (
+    <div>
+      <div className="relative">
+        <div className="flex gap-px h-5 rounded overflow-hidden">
+          {points.map((p, i) => (
+            <div
+              key={i}
+              className={`flex-1 cursor-default transition-opacity hover:opacity-80 ${STATUS_COLOR[p.status] || 'bg-granite/40'}`}
+              onMouseEnter={e => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const parent = e.currentTarget.closest('.relative').getBoundingClientRect();
+                setTooltip({ x: rect.left - parent.left + rect.width / 2, label: p.status, ts: p.ts });
+              }}
+              onMouseLeave={() => setTooltip(null)}
+            />
+          ))}
+        </div>
+        {tooltip && (
+          <div
+            className="pointer-events-none absolute z-10 px-2 py-1 rounded text-xs bg-surface border border-border shadow-lg whitespace-nowrap -translate-x-1/2"
+            style={{ left: tooltip.x, bottom: '110%' }}
+          >
+            <span className={`font-semibold ${STATUS_COLOR[tooltip.label]?.replace('bg-', 'text-') || 'text-muted'}`}>{tooltip.label}</span>
+            <span className="text-muted ml-1.5">{new Date(tooltip.ts).toLocaleString(locale)}</span>
+          </div>
+        )}
+      </div>
+      <div className="flex justify-between text-xs text-muted mt-1">
+        <span>{periodLabel}</span>
+        <span>{lang === 'fr' ? 'Maintenant' : 'Now'}</span>
+      </div>
+    </div>
+  );
+}
+
 function UptimeBadge({ value, label }) {
   if (value == null) return null;
   const color = value >= 99 ? 'text-celadon' : value >= 95 ? 'text-amber-400' : 'text-red-400';
@@ -151,10 +200,11 @@ export default function ServiceDetail({ monitor, onClose }) {
                     ))}
                   </div>
                 </div>
-                <div className="flex justify-around">
+                <div className="flex justify-around mb-3">
                   <UptimeBadge value={hist?.uptime?.h24} label={t('modal.label24h')} />
                   <UptimeBadge value={hist?.uptime?.d7}  label={t('modal.label7d')} />
                 </div>
+                {points.length >= 2 && <StatusTimeline points={points} period={period} lang={lang} />}
               </div>
 
               {/* Sparklines — one per metric (or fallback primary) */}

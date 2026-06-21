@@ -104,10 +104,7 @@ export default function Layout() {
     const timer = setInterval(fetchIncidents, 60000);
 
     const es = new EventSource(`/api/events?token=${token}`);
-    es.addEventListener('monitor', (e) => {
-      const data = JSON.parse(e.data);
-      if (data.status === 'online') fetchIncidents();
-    });
+    es.addEventListener('monitor', () => fetchIncidents());
     es.onerror = () => {};
 
     return () => { clearInterval(timer); es.close(); };

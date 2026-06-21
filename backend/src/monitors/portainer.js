@@ -18,6 +18,7 @@ async function check(config, lastState) {
     headers,
   });
 
+  const start = Date.now();
   try {
     const endpointsRes = await http.get(`${base}/api/endpoints`, {
       responseType: 'text',
@@ -63,13 +64,14 @@ throw new Error(`URL incorrecte (HTML reçu, status ${endpointsRes.status}) — 
       }
     }
 
+    const responseTime = Date.now() - start;
     const state = { environments: endpoints.length, containersRunning, containersStopped, containers: containerList };
-    const metrics = { environments: endpoints.length, containersRunning, containersStopped, containers: containerList };
+    const metrics = { environments: endpoints.length, containersRunning, containersStopped, containers: containerList, responseTime };
     const status = endpoints.length > 0 ? 'online' : 'warning';
 
     return { status, state, metrics, notifications: [] };
   } catch (err) {
-    return { status: 'error', state: lastState, metrics: null, notifications: [
+    return { status: 'error', lastError: err.message, state: lastState, metrics: null, notifications: [
       { title: 'Portainer — Erreur API', message: err.message, level: 'error', type: 'status_change' }
     ]};
   }

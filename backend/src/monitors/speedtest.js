@@ -37,23 +37,27 @@ async function check(config, lastState) {
     const successful = d.is_successful ?? d.status === 'completed' ?? true;
     const status = successful ? 'online' : 'warning';
 
+    const failReason = !successful
+      ? (d.data?.result?.message || d.message || 'Le dernier test speedtest a échoué')
+      : null;
+
     const metrics = { downloadMbps, uploadMbps, pingMs, jitterMs };
 
     const notifications = [];
     if (lastState && successful !== (lastState.successful ?? true)) {
       notifications.push({
         title: 'Speedtest Tracker',
-        message: successful ? 'Test speedtest réussi' : 'Test speedtest échoué',
+        message: successful ? 'Test speedtest réussi' : `Test speedtest échoué${failReason ? ` — ${failReason}` : ''}`,
         level: successful ? 'info' : 'warning',
         type: 'status_change',
       });
     }
 
-    return { status, state: { ...metrics, successful }, metrics, notifications };
+    return { status, lastError: failReason, state: { ...metrics, successful }, metrics, notifications };
   } catch (err) {
     console.error('[speedtest]', err.message);
     return {
-      status: 'error', state: lastState, metrics: null,
+      status: 'error', lastError: err.message, state: lastState, metrics: null,
       notifications: [{ title: 'Speedtest Tracker — Erreur API', message: err.message, level: 'error', type: 'status_change' }],
     };
   }

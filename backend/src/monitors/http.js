@@ -169,8 +169,14 @@ async function check(config, lastState) {
     ? (sslInfo.daysLeft <= 0 ? 'expired' : sslInfo.daysLeft <= sslAlertDays ? 'expiring' : 'ok')
     : null;
 
+  let lastError = null;
+  if (!ok) lastError = errMsg || 'Service inaccessible';
+  else if (isSlow) lastError = `Temps de réponse élevé : ${responseTime}ms (seuil : ${responseTimeThreshold}ms)`;
+  else if (sslStatus === 'expired') lastError = 'Certificat SSL expiré';
+
   return {
     status: ok ? (isSlow || sslStatus === 'expired' ? 'warning' : 'online') : (statusCode ? 'warning' : 'offline'),
+    lastError,
     state: { ok, statusCode, responseTime, errMsg, sslDaysLeft: sslInfo?.daysLeft, slowAlerted: isSlow },
     metrics: { url, statusCode, responseTime, ok, faviconUrl, errMsg, sslInfo, sslStatus },
     notifications,

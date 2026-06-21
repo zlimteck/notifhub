@@ -16,11 +16,13 @@ async function check(config, lastState) {
     headers: { 'x-api-key': apiKey, ...cfHeaders(config) },
   });
 
+  const start = Date.now();
   try {
     const [statsRes, storageRes] = await Promise.all([
       http.get(`${base}/api/server/statistics`),
       http.get(`${base}/api/server/storage`),
     ]);
+    const responseTime = Date.now() - start;
 
     const stats = statsRes.data;
     const storage = storageRes.data;
@@ -45,11 +47,12 @@ async function check(config, lastState) {
       diskUse: storage.diskUse,
       diskSize: storage.diskSize,
       diskPct,
+      responseTime,
     };
 
     return { status: 'online', state, metrics, notifications };
   } catch (err) {
-    return { status: 'error', state: lastState, metrics: null, notifications: [
+    return { status: 'error', lastError: err.message, state: lastState, metrics: null, notifications: [
       { title: 'Immich — Erreur API', message: err.message, level: 'error', type: 'status_change' }
     ]};
   }

@@ -18,10 +18,11 @@ const CONFIG = {
     { key: 'diskErrors',        fr: 'Erreurs disque',        en: 'Disk errors',        unit: '' },
   ],
   proxmox: [
-    { key: 'cpuPct',     fr: 'CPU',         en: 'CPU',          unit: '%' },
-    { key: 'memPct',     fr: 'RAM',         en: 'RAM',          unit: '%' },
-    { key: 'vmRunning',  fr: 'VMs actives', en: 'Running VMs',  unit: '' },
-    { key: 'lxcRunning', fr: 'LXC actifs',  en: 'Running LXC',  unit: '' },
+    { key: 'cpuPct',       fr: 'CPU',              en: 'CPU',              unit: '%' },
+    { key: 'memPct',       fr: 'RAM',              en: 'RAM',              unit: '%' },
+    { key: 'vmRunning',    fr: 'VMs actives',      en: 'Running VMs',      unit: '' },
+    { key: 'lxcRunning',   fr: 'LXC actifs',       en: 'Running LXC',      unit: '' },
+    { key: 'responseTime', fr: 'Temps de réponse', en: 'Response time',    unit: 'ms' },
   ],
   ssh: [
     { key: 'cpuPct',  fr: 'CPU',    en: 'CPU',  unit: '%' },
@@ -42,20 +43,23 @@ const CONFIG = {
     { key: 'used_requests',  fr: 'Requêtes utilisées', en: 'Used requests', unit: '' },
   ],
   immich: [
-    { key: 'diskPct', fr: 'Disque', en: 'Disk',   unit: '%' },
-    { key: 'photos',  fr: 'Photos', en: 'Photos',  unit: '' },
-    { key: 'videos',  fr: 'Vidéos', en: 'Videos',  unit: '' },
+    { key: 'diskPct',      fr: 'Disque',           en: 'Disk',           unit: '%' },
+    { key: 'photos',       fr: 'Photos',           en: 'Photos',         unit: '' },
+    { key: 'videos',       fr: 'Vidéos',           en: 'Videos',         unit: '' },
+    { key: 'responseTime', fr: 'Temps de réponse', en: 'Response time',  unit: 'ms' },
   ],
   jellyfin: [
     { key: 'activeSessions', fr: 'Sessions actives', en: 'Active sessions', unit: '' },
     { key: 'movies',         fr: 'Films',            en: 'Movies',          unit: '' },
     { key: 'series',         fr: 'Séries',           en: 'Series',          unit: '' },
     { key: 'songs',          fr: 'Musiques',         en: 'Songs',           unit: '' },
+    { key: 'responseTime',   fr: 'Temps de réponse', en: 'Response time',   unit: 'ms' },
   ],
   portainer: [
     { key: 'containersRunning', fr: 'Containers actifs',  en: 'Running containers', unit: '' },
     { key: 'containersStopped', fr: 'Containers arrêtés', en: 'Stopped containers', unit: '' },
     { key: 'environments',      fr: 'Environnements',     en: 'Environments',       unit: '' },
+    { key: 'responseTime',      fr: 'Temps de réponse',   en: 'Response time',      unit: 'ms' },
   ],
   docker: [
     { key: 'containersRunning', fr: 'Containers actifs',  en: 'Running containers', unit: '' },

@@ -15,12 +15,14 @@ async function check(config, lastState) {
     headers: { 'X-Emby-Token': apiKey },
   });
 
+  const start = Date.now();
   try {
     const [infoRes, sessionsRes, countsRes] = await Promise.all([
       http.get(`${base}/System/Info`),
       http.get(`${base}/Sessions`),
       http.get(`${base}/Items/Counts`),
     ]);
+    const responseTime = Date.now() - start;
 
     const info     = infoRes.data;
     const sessions = sessionsRes.data;
@@ -33,12 +35,12 @@ async function check(config, lastState) {
     const version = info.Version       ?? '';
 
     const state   = { activeSessions, movies, series, songs, version };
-    const metrics = { activeSessions, movies, series, songs, version, serverName: info.ServerName ?? '' };
+    const metrics = { activeSessions, movies, series, songs, version, serverName: info.ServerName ?? '', responseTime };
 
     return { status: 'online', state, metrics, notifications: [] };
   } catch (err) {
     return {
-      status: 'error', state: lastState, metrics: null,
+      status: 'error', lastError: err.message, state: lastState, metrics: null,
       notifications: [{ title: 'Jellyfin — Erreur API', message: err.message, level: 'error', type: 'status_change' }],
     };
   }

@@ -122,7 +122,7 @@ router.post('/test', async (req, res) => {
   if (!handler) return res.status(400).json({ error: `Type inconnu: ${type}` });
   try {
     const result = await handler.check(config, null);
-    res.json({ status: result.status, metrics: result.metrics });
+    res.json({ status: result.status, metrics: result.metrics, error: result.lastError || null });
   } catch (err) {
     res.json({ status: 'error', error: err.message });
   }
@@ -136,7 +136,7 @@ router.post('/:id/test', async (req, res) => {
   if (!handler) return res.status(400).json({ error: `Type inconnu: ${monitor.type}` });
   try {
     const result = await handler.check(monitor.config, monitor.lastState);
-    res.json({ status: result.status, metrics: result.metrics });
+    res.json({ status: result.status, metrics: result.metrics, error: result.lastError || null });
   } catch (err) {
     res.json({ status: 'error', error: err.message });
   }

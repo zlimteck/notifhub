@@ -586,7 +586,7 @@ export default function ServiceModal({ monitor, onClose, onSave }) {
                 disabled={!!monitor}
                 onChange={e => !monitor && handleTypeChange(e.target.value)}
               >
-                {Object.entries(TYPE_LABELS).map(([v, l]) => (
+                {Object.entries(TYPE_LABELS).sort((a, b) => a[1].localeCompare(b[1])).map(([v, l]) => (
                   <option key={v} value={v}>{l}</option>
                 ))}
               </select>
@@ -623,7 +623,7 @@ export default function ServiceModal({ monitor, onClose, onSave }) {
               <label className="label">{t('form.dependsOn')}</label>
               <p className="text-xs text-muted mb-2">{t('form.dependsOnHint')}</p>
               <div className="space-y-1 max-h-32 overflow-y-auto border border-border rounded-lg p-2">
-                {allMonitors.filter(m => m._id !== monitor?._id).map(m => (
+                {allMonitors.filter(m => m._id !== monitor?._id).sort((a, b) => a.name.localeCompare(b.name)).map(m => (
                   <label key={m._id} className="flex items-center gap-2 cursor-pointer py-0.5">
                     <input
                       type="checkbox"

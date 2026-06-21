@@ -7,6 +7,24 @@ const { sendNotification } = require('../services/notifier');
 const sse = require('../sse');
 const handlers = require('./handlers');
 
+function computeSeverity(result, monitorType) {
+  const status = result.status;
+  const statusCode = result.state?.statusCode;
+  const lastError = (result.lastError || '').toLowerCase();
+
+  if (status === 'offline') {
+    return ['http', 'ping', 'heartbeat'].includes(monitorType) ? 'P1' : 'P2';
+  }
+  if (status === 'error') {
+    if (monitorType === 'http' && statusCode >= 500) return 'P1';
+    if (lastError.includes('timeout') || lastError.includes('econnrefused') || lastError.includes('econnreset')) return 'P1';
+    return 'P2';
+  }
+  // warning
+  if (lastError.includes('ssl expiré') || lastError.includes('expiré')) return 'P2';
+  return 'P3';
+}
+
 async function runCheck(monitor) {
   const handler = handlers[monitor.type];
   if (!handler) return;
@@ -36,13 +54,13 @@ async function runCheck(monitor) {
     };
   }
 
-  const errorNotif = (result.notifications || []).find(n => n.level === 'error');
+  const errorNotif = (result.notifications || []).find(n => (n.level === 'error' || n.level === 'warning') && n.type === 'status_change');
   const update = {
     status: result.status,
     lastState: result.state ?? monitor.lastState,
     metrics: result.metrics ?? monitor.metrics,
     lastChecked: new Date(),
-    lastError: ['error', 'warning'].includes(result.status) ? (errorNotif?.message || result.state?.errMsg || 'Erreur inconnue') : null,
+    lastError: ['error', 'warning'].includes(result.status) ? (result.lastError || errorNotif?.message || result.state?.errMsg || null) : null,
   };
 
   // AdGuard token refresh — persist updated tokens
@@ -65,7 +83,7 @@ async function runCheck(monitor) {
 
   // Incident tracking
   if (['error', 'offline', 'warning'].includes(result.status)) {
-    const severity = result.status === 'offline' ? 'P1' : result.status === 'error' ? 'P2' : 'P3';
+    const severity = computeSeverity(result, monitor.type);
     Incident.findOneAndUpdate(
       { monitorId: monitor._id, resolvedAt: null },
       { $setOnInsert: { monitorId: monitor._id, monitorName: monitor.name, monitorType: monitor.type, triggerStatus: result.status, severity, reason: update.lastError || null, startedAt: new Date() } },

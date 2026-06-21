@@ -51,6 +51,7 @@ async function check(config, lastState) {
 
   return {
     status,
+    lastError: loss > 0 && loss < 100 ? `Perte de paquets : ${loss}% (port ${port})` : null,
     state: { latency, loss, host, port },
     metrics: { host, port, latency, loss },
     notifications,
