@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Radio, Bell, Settings, Menu, X, Code2, Siren, LogOut, Sun, Moon, BarChart2 } from 'lucide-react';
+import { LayoutDashboard, Radio, Bell, Settings, Menu, X, Code2, Siren, LogOut, Sun, Moon, BarChart2, GitBranch } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useLang } from '../context/LangContext';
@@ -115,6 +115,7 @@ export default function Layout() {
     { to: '/monitors', icon: Radio,           label: t('nav.services') },
     { to: '/logs',     icon: Bell,            label: t('nav.notifications') },
     { to: '/incidents',icon: Siren,           label: t('nav.incidents'), badge: openIncidents },
+    { to: '/timeline', icon: GitBranch,       label: t('nav.timeline') },
     { to: '/stats',    icon: BarChart2,       label: t('nav.stats') },
     { to: '/settings', icon: Settings,        label: t('nav.settings') },
     { to: '/docs',     icon: Code2,           label: t('nav.api') },

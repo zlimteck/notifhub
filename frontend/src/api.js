@@ -73,6 +73,7 @@ export const incidents = {
   setSeverity: (id, severity) => api.patch(`/incidents/${id}/severity`, { severity }).then(r => r.data),
   delete: (id) => api.delete(`/incidents/${id}`).then(r => r.data),
   savePostmortem: (id, data) => api.patch(`/incidents/${id}/postmortem`, data).then(r => r.data),
+  timeline: (hours = 24) => api.get('/incidents/timeline', { params: { hours } }).then(r => r.data),
 };
 
 export const stats = {

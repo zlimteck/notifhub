@@ -10,6 +10,7 @@ import Dashboard from './pages/Dashboard';
 import Services from './pages/Services';
 import Logs from './pages/Logs';
 import Incidents from './pages/Incidents';
+import Timeline from './pages/Timeline';
 import Settings from './pages/Settings';
 import ApiDocs from './pages/ApiDocs';
 import Login from './pages/Login';
@@ -47,6 +48,7 @@ export default function App() {
             <Route path="monitors" element={<Services />} />
             <Route path="logs" element={<Logs />} />
             <Route path="incidents" element={<Incidents />} />
+            <Route path="timeline" element={<Timeline />} />
             <Route path="settings" element={<Settings />} />
             <Route path="docs" element={<ApiDocs />} />
             <Route path="stats" element={<Stats />} />
