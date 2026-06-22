@@ -723,6 +723,37 @@ function AdvancedSection({ form, setForm, allMonitors, monitor, lang, t, default
             </div>
           )}
 
+          {/* Custom notification templates */}
+          <div className="border-t border-border pt-3 space-y-3">
+            <p className="text-xs font-medium text-thistle">{t('form.notifTemplates.title')}</p>
+            <div className="bg-granite-3/50 border border-border rounded-lg px-3 py-2 space-y-1">
+              <p className="text-xs text-muted">{t('form.notifTemplates.hint')}</p>
+              <div className="flex flex-wrap gap-1 pt-0.5">
+                {['{{name}}','{{status}}','{{duration}}','{{downAt}}','{{resolvedAt}}'].map(v => (
+                  <code key={v} className="text-xs bg-granite-3 border border-border rounded px-1.5 py-0.5 text-periwinkle">{v}</code>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-red-400">{t('form.notifTemplates.down')}</p>
+              <Field label={t('form.notifTemplates.titleField')} value={form.config.downTitle || ''}
+                onChange={v => setForm(f => ({ ...f, config: { ...f.config, downTitle: v || undefined } }))}
+                placeholder={`${t('form.notifTemplates.titlePlaceholderDown')}`} />
+              <Field label={t('form.notifTemplates.messageField')} value={form.config.downMessage || ''}
+                onChange={v => setForm(f => ({ ...f, config: { ...f.config, downMessage: v || undefined } }))}
+                placeholder={`${t('form.notifTemplates.messagePlaceholderDown')}`} />
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-celadon">{t('form.notifTemplates.recovery')}</p>
+              <Field label={t('form.notifTemplates.titleField')} value={form.config.recoveryTitle || ''}
+                onChange={v => setForm(f => ({ ...f, config: { ...f.config, recoveryTitle: v || undefined } }))}
+                placeholder={`${t('form.notifTemplates.titlePlaceholderRecovery')}`} />
+              <Field label={t('form.notifTemplates.messageField')} value={form.config.recoveryMessage || ''}
+                onChange={v => setForm(f => ({ ...f, config: { ...f.config, recoveryMessage: v || undefined } }))}
+                placeholder={`${t('form.notifTemplates.messagePlaceholderRecovery')}`} />
+            </div>
+          </div>
+
           {allMonitors.filter(m => m._id !== monitor?._id).length > 0 && (
             <div>
               <label className="label">{t('form.dependsOn')}</label>

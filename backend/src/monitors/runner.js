@@ -27,6 +27,19 @@ function computeSeverity(result, monitorType) {
   return 'P3';
 }
 
+function applyTemplate(template, vars) {
+  return template.replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] ?? `{{${k}}}`);
+}
+
+function formatDuration(ms) {
+  const s = Math.floor(ms / 1000);
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ${s % 60}s`;
+  const h = Math.floor(m / 60);
+  return `${h}h ${m % 60}m`;
+}
+
 function resolveProxy(monitor, settings, globalProxy) {
   if (monitor.config?.proxyId) {
     const saved = settings?.proxies?.find(p => String(p._id) === String(monitor.config.proxyId));
@@ -146,6 +159,31 @@ async function runCheck(monitor, globalProxy = null, lang = 'fr') {
     } else if (cameBack) {
       const notif = L.monitorBack(monitor.name);
       monitorNotifs.push({ ...notif, level: 'success', type: 'status_change' });
+    }
+  }
+
+  // Apply per-monitor custom notification templates (overrides i18n defaults)
+  const cfg = monitor.config || {};
+  if (cfg.downTitle || cfg.downMessage || cfg.recoveryTitle || cfg.recoveryMessage) {
+    for (const notif of monitorNotifs) {
+      if (notif.type !== 'status_change') continue;
+      const isRecovery = notif.level === 'success';
+      if (isRecovery && (cfg.recoveryTitle || cfg.recoveryMessage)) {
+        const downAt = monitor.lastDownAt ? new Date(monitor.lastDownAt) : null;
+        const duration = downAt ? formatDuration(Date.now() - downAt.getTime()) : '?';
+        const vars = {
+          name: monitor.name,
+          duration,
+          downAt:      downAt ? downAt.toLocaleString() : '?',
+          resolvedAt:  new Date().toLocaleString(),
+        };
+        if (cfg.recoveryTitle)   notif.title   = applyTemplate(cfg.recoveryTitle,   vars);
+        if (cfg.recoveryMessage) notif.message = applyTemplate(cfg.recoveryMessage, vars);
+      } else if (!isRecovery && (cfg.downTitle || cfg.downMessage)) {
+        const vars = { name: monitor.name, status: result.status };
+        if (cfg.downTitle)   notif.title   = applyTemplate(cfg.downTitle,   vars);
+        if (cfg.downMessage) notif.message = applyTemplate(cfg.downMessage, vars);
+      }
     }
   }
 

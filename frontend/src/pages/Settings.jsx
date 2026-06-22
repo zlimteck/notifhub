@@ -580,13 +580,15 @@ export default function Settings() {
             placeholder="Powered by Acme Inc."
             onChange={e => setForm(f => ({ ...f, statusPage: { ...f.statusPage, footerText: e.target.value } }))} />
         </div>
-        <div className="bg-granite-3/60 border border-border rounded-xl px-3 py-2 flex items-center gap-2 text-xs">
-          <Globe size={12} className="text-muted shrink-0" />
-          <span className="text-muted">{t('settings.statusPage.url')} :</span>
-          <a href="/status" target="_blank" rel="noreferrer"
-            className="text-periwinkle hover:underline font-mono">
-            {window.location.origin}/status
-          </a>
+        <div className="bg-granite-3/60 border border-border rounded-xl px-3 py-2 flex items-start gap-2 text-xs">
+          <Globe size={12} className="text-muted shrink-0 mt-0.5" />
+          <div className="min-w-0">
+            <span className="text-muted">{t('settings.statusPage.url')} :</span>
+            <a href="/status" target="_blank" rel="noreferrer"
+              className="text-periwinkle hover:underline font-mono break-all block">
+              {window.location.origin}/status
+            </a>
+          </div>
         </div>
         <button type="submit" className="btn-primary">
           <Save size={14} /> {t('settings.save')}
@@ -690,9 +692,9 @@ export default function Settings() {
         </h2>
         <div className="divide-y divide-border">
           {[
-            ['App',         `${window.location.hostname}:3050`],
-            ['Backend API', `${window.location.hostname}:3050/api`],
-            ['MCP (HTTP)',  `${window.location.hostname}:3050/api/mcp`],
+            ['App',         window.location.origin],
+            ['Backend API', `${window.location.origin}/api`],
+            ['MCP (HTTP)',  `${window.location.origin}/api/mcp`],
             ['Apprise API', `${window.location.hostname}:8008`],
             ['MongoDB',     `${t('settings.docker.internal')} (mongo:27017)`],
           ].map(([label, val]) => (
