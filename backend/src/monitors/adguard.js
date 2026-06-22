@@ -25,6 +25,7 @@ async function fetchData(accessToken, http) {
     http.get(`${BASE}/dns_servers`, { headers: { Authorization: `Bearer ${accessToken}` } }),
     http.get(`${BASE}/account/limits`, { headers: { Authorization: `Bearer ${accessToken}` } }),
   ]);
+  const statusCode = srv.status;
   const server = srv.data[0];
   const account = acc.data;
   return {
@@ -35,6 +36,7 @@ async function fetchData(accessToken, http) {
     devices: server.device_ids.length,
     used_requests: account.requests.used,
     limit_requests: account.requests.limit,
+    statusCode,
   };
 }
 
@@ -89,6 +91,7 @@ async function check(config, lastState, lang = 'fr') {
     used_requests: data.used_requests,
     limit_requests: data.limit_requests,
     pct_requests: Math.round((data.used_requests / data.limit_requests) * 100),
+    statusCode: data.statusCode,
   };
 
   return { status, state: data, metrics, configUpdate, notifications };

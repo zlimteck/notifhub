@@ -113,7 +113,7 @@ async function check(config, lastState, lang = 'fr') {
       }
     }
 
-    return { status, state: metrics, metrics, notifications };
+    return { status, state: metrics, metrics: { ...metrics, statusCode: res.status }, notifications };
   } catch (err) {
     const detail = err.response?.data ? JSON.stringify(err.response.data).slice(0, 300) : '';
     const message = detail ? `${err.message} — ${detail}` : err.message;

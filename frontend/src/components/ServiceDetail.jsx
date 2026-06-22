@@ -208,35 +208,13 @@ export default function ServiceDetail({ monitor, onClose }) {
                 {points.length >= 2 && <StatusTimeline points={points} period={period} lang={lang} />}
               </div>
 
-              {/* Sparklines — one per metric (or fallback primary) */}
-              {graphs.map(g => (
-                <div key={g.key} className="pt-4 border-t border-border/50">
-                  <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">{g.label}</p>
-                  <Sparkline points={g.pts} color={sparkColor} height={110} showLabels incidents={incidents} annotations={annotations} />
-                  <div className="flex justify-between text-xs text-muted/50 mt-1">
-                    <span>{period === 24 ? '−24h' : `−${t('modal.period7d')}`}</span>
-                    <span>{t('modal.now')}</span>
-                  </div>
-                </div>
-              ))}
-
-              {graphs.length === 0 && hist !== null && monitor.type !== 'http' && (
-                <div className="text-center py-8">
-                  <p className="text-xs text-muted italic">{t('modal.noData')}</p>
-                </div>
-              )}
-
-              {/* HTTP: last status codes list */}
-              {monitor.type === 'http' && hist !== null && (() => {
+              {/* Last HTTP status codes — shown for any monitor type that exposes statusCode in metrics */}
+              {hist !== null && (() => {
                 const recent = points
                   .filter(p => p.metrics?.statusCode != null)
                   .slice(-10)
                   .reverse();
-                if (!recent.length) return (
-                  <div className="text-center py-8">
-                    <p className="text-xs text-muted italic">{t('modal.noData')}</p>
-                  </div>
-                );
+                if (!recent.length) return null;
                 return (
                   <div className="pt-4 border-t border-border/50">
                     <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">
@@ -269,6 +247,24 @@ export default function ServiceDetail({ monitor, onClose }) {
                   </div>
                 );
               })()}
+
+              {/* Sparklines — one per metric (or fallback primary) */}
+              {graphs.map(g => (
+                <div key={g.key} className="pt-4 border-t border-border/50">
+                  <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">{g.label}</p>
+                  <Sparkline points={g.pts} color={sparkColor} height={110} showLabels incidents={incidents} annotations={annotations} />
+                  <div className="flex justify-between text-xs text-muted/50 mt-1">
+                    <span>{period === 24 ? '−24h' : `−${t('modal.period7d')}`}</span>
+                    <span>{t('modal.now')}</span>
+                  </div>
+                </div>
+              ))}
+
+              {graphs.length === 0 && hist !== null && !points.some(p => p.metrics?.statusCode != null) && (
+                <div className="text-center py-8">
+                  <p className="text-xs text-muted italic">{t('modal.noData')}</p>
+                </div>
+              )}
 
             </>
           )}

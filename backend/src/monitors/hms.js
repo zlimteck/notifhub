@@ -18,6 +18,7 @@ async function fetchVps(hmsToken, vpsId, vpsName, extraHeaders = {}, proxy = nul
 
   return {
     id: vpsId,
+    statusCode: infoRes.status,
     name: vpsName || info.hostname,
     hostname: info.hostname,
     ipv4: info.ipv4 || null,
@@ -90,6 +91,7 @@ async function check(config, lastState, lang = 'fr') {
     avg_cpu: results.length ? Math.round(results.reduce((s, v) => s + v.cpu, 0) / results.length) : 0,
     avg_memory_pct: results.length ? Math.round(results.reduce((s, v) => s + v.memory_pct, 0) / results.length) : 0,
     vps: results,
+    statusCode: results[0]?.statusCode ?? null,
   };
 
   return { status, state, metrics, notifications };

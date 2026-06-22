@@ -77,9 +77,10 @@ async function runCheck(monitor, globalProxy = null, lang = 'fr') {
     console.error(`[Runner] Unexpected error on ${monitor.name}:`, err.message);
     result = {
       status: 'error',
+      lastError: err.message,
       state: monitor.lastState,
       metrics: monitor.metrics,
-      notifications: [{ title: `Error — ${monitor.name}`, message: err.message, level: 'error', type: 'error' }],
+      notifications: [{ title: `Error — ${monitor.name}`, message: err.message, level: 'error', type: 'status_change' }],
     };
   }
 

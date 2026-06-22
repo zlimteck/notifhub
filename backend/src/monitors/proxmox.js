@@ -71,6 +71,7 @@ async function check(config, lastState, lang = 'fr') {
       lxcTotal: lxcs.length, lxcRunning,
       uptime: ns.uptime,
       responseTime,
+      statusCode: nodeRes.status,
     };
 
     return { status: 'online', state, metrics, notifications };

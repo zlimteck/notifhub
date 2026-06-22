@@ -69,7 +69,7 @@ async function check(config, lastState, lang = 'fr') {
 
     const responseTime = Date.now() - start;
     const state = { environments: endpoints.length, containersRunning, containersStopped, containers: containerList };
-    const metrics = { environments: endpoints.length, containersRunning, containersStopped, containers: containerList, responseTime };
+    const metrics = { environments: endpoints.length, containersRunning, containersStopped, containers: containerList, responseTime, statusCode: endpointsRes.status };
     const status = endpoints.length > 0 ? 'online' : 'warning';
 
     return { status, state, metrics, notifications: [] };

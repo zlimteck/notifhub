@@ -55,6 +55,7 @@ async function check(config, lastState, lang = 'fr') {
       free_storage:      info.free_storage_gb,
       traffic_available: info.traffic_available_percentage,
       traffic_reset:     info.next_traffic_reset,
+      statusCode:        res.status,
     };
   } catch (err) {
     if (err.response?.status === 429) {
@@ -85,7 +86,7 @@ async function check(config, lastState, lang = 'fr') {
 
   return {
     status, state: data,
-    metrics: { total_storage: data.total_storage, free_storage: data.free_storage, free_pct, traffic_available: data.traffic_available, traffic_reset: data.traffic_reset },
+    metrics: { total_storage: data.total_storage, free_storage: data.free_storage, free_pct, traffic_available: data.traffic_available, traffic_reset: data.traffic_reset, statusCode: data.statusCode },
     notifications,
   };
 }

@@ -16,7 +16,7 @@ async function fetchData(config) {
     axios.get(`${base}/control/stats`,  { auth, httpsAgent, ...httpExtra, timeout: 10000 }),
   ]);
 
-  return { status: statusRes.data, stats: statsRes.data };
+  return { status: statusRes.data, stats: statsRes.data, statusCode: statusRes.status };
 }
 
 async function check(config, lastState, lang = 'fr') {
@@ -31,7 +31,7 @@ async function check(config, lastState, lang = 'fr') {
   const wasOnline = lastState !== null;
 
   try {
-    const { status, stats } = await fetchData(config);
+    const { status, stats, statusCode } = await fetchData(config);
 
     const totalQueries  = stats.num_dns_queries ?? 0;
     const blocked       = stats.num_blocked_filtering ?? 0;
@@ -48,6 +48,7 @@ async function check(config, lastState, lang = 'fr') {
       blockedPct,
       safebrowsing,
       parental,
+      statusCode,
     };
 
     const notifications = [];

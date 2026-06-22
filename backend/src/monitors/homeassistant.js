@@ -31,6 +31,7 @@ async function check(config, lastState, lang = 'fr') {
   try {
     const apiRes = await client.get(`${base}/api/`);
     const version = apiRes.data?.version || null;
+    const statusCode = apiRes.status;
 
     // Fetch selected entity states
     const entityStates = [];
@@ -69,7 +70,7 @@ async function check(config, lastState, lang = 'fr') {
     }
 
     const activeEntities = entityStates.filter(e => e.state !== 'unavailable').length;
-    const metrics = { version, entityStates, activeEntities, ...flatMetrics };
+    const metrics = { version, entityStates, activeEntities, ...flatMetrics, statusCode };
     const notifications = [];
 
     if (!wasOnline) {

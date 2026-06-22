@@ -49,6 +49,7 @@ async function check(config, lastState, lang = 'fr') {
       diskSize: storage.diskSize,
       diskPct,
       responseTime,
+      statusCode: statsRes.status,
     };
 
     return { status: 'online', state, metrics, notifications };

@@ -40,7 +40,7 @@ async function check(config, lastState, lang = 'fr') {
       status: 'online',
       lastError: null,
       state: { version, modelsCount, modelNames, responseTime },
-      metrics: { version, modelsCount, responseTime },
+      metrics: { version, modelsCount, responseTime, statusCode: versionRes.status },
       notifications: [],
     };
   } catch (err) {

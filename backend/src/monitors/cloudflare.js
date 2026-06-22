@@ -22,7 +22,7 @@ async function getTunnels(token, accountId, http) {
       headers: { Authorization: `Bearer ${token}` },
     })
   );
-  return res.data.result || [];
+  return { tunnels: res.data.result || [], statusCode: res.status };
 }
 
 async function getTunnelConfig(token, accountId, tunnelId, http) {
@@ -61,7 +61,7 @@ async function check(config, lastState, lang = 'fr') {
     ...(proxyAgents && { httpsAgent: proxyAgents.httpsAgent, httpAgent: proxyAgents.httpAgent }),
   });
 
-  const tunnels = await getTunnels(apiToken, accountId, http);
+  const { tunnels, statusCode } = await getTunnels(apiToken, accountId, http);
   const active = tunnels.filter(t => {
     const n = (t.name || '').toLowerCase();
     return (t.status === 'active' || t.status === 'healthy') && !SKIP_NAMES.some(s => n.includes(s));
@@ -113,6 +113,7 @@ async function check(config, lastState, lang = 'fr') {
     total: active.length,
     healthy: active.filter(t => t.status === 'active' || t.status === 'healthy').length,
     tunnels: Object.values(currentTunnelMap),
+    statusCode,
   };
 
   return { status, state, metrics, notifications };

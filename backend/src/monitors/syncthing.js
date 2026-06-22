@@ -25,7 +25,7 @@ async function getSystemStatus(http, apiUrl, apiKey) {
   const res = await http.get(`${apiUrl}/rest/system/status`, {
     headers: { 'X-API-Key': apiKey },
   });
-  return res.data;
+  return { data: res.data, statusCode: res.status };
 }
 
 async function getConfig(http, apiUrl, apiKey) {
@@ -53,14 +53,15 @@ async function check(config, lastState, lang = 'fr') {
   }
 
   const http = makeClient(rejectUnauthorized, cfHeaders(config), proxy);
-  let cfg, connections, sysStatus, folders = [];
+  let cfg, connections, sysStatus, sysStatusResult, folders = [];
 
   try {
-    [cfg, connections, sysStatus] = await Promise.all([
+    [cfg, connections, sysStatusResult] = await Promise.all([
       getConfig(http, apiUrl, apiKey),
       getConnections(http, apiUrl, apiKey),
       getSystemStatus(http, apiUrl, apiKey),
     ]);
+    sysStatus = sysStatusResult.data;
 
     const targetFolders = folderIds.length
       ? folderIds
@@ -135,6 +136,7 @@ async function check(config, lastState, lang = 'fr') {
     folders_synced: folders.filter(f => f.needBytes === 0 && f.state !== 'error').length,
     devices,
     folders,
+    statusCode: sysStatusResult.statusCode,
   };
 
   return { status, state, metrics, notifications };

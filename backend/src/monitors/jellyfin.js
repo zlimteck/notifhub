@@ -40,7 +40,7 @@ async function check(config, lastState, lang = 'fr') {
     const version = info.Version       ?? '';
 
     const state   = { activeSessions, movies, series, songs, version };
-    const metrics = { activeSessions, movies, series, songs, version, serverName: info.ServerName ?? '', responseTime };
+    const metrics = { activeSessions, movies, series, songs, version, serverName: info.ServerName ?? '', responseTime, statusCode: infoRes.status };
 
     return { status: 'online', state, metrics, notifications: [] };
   } catch (err) {
