@@ -3,7 +3,6 @@
 const CONFIG = {
   http: [
     { key: 'responseTime', fr: 'Temps de réponse', en: 'Response time', unit: 'ms' },
-    { key: 'statusCode',   fr: 'Status HTTP',      en: 'HTTP status',   unit: '' },
   ],
   ping: [
     { key: 'latency', fr: 'Latence',  en: 'Latency', unit: 'ms' },

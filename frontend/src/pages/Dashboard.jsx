@@ -571,7 +571,7 @@ function CardContent({ monitor, hist, dailyHist, showGraphs, onSelect, t, draggi
         <div className="flex items-center gap-2 min-w-0">
           <span className="shrink-0 relative flex items-center justify-center w-5 h-5">
             <span className={dragHandleProps ? 'transition-opacity group-hover:opacity-0' : ''}>
-              <ServiceIcon type={monitor.type} size={20} url={monitor.config?.url} faviconUrl={monitor.metrics?.faviconUrl} serviceUrl={monitor.serviceUrl} />
+              <ServiceIcon type={monitor.type} size={20} url={monitor.config?.url} faviconUrl={monitor.metrics?.faviconUrl} serviceUrl={monitor.serviceUrl} customIconUrl={monitor.customIconUrl} />
             </span>
             {dragHandleProps && (
               <div {...dragHandleProps} onClick={e => e.stopPropagation()}
@@ -675,7 +675,7 @@ function ListRow({ monitor, hist, onSelect, t }) {
       className={`flex items-center gap-3 px-3 py-2 rounded-xl border border-transparent hover:border-periwinkle/30 hover:bg-granite-3/40 cursor-pointer transition-all duration-150 select-none animate-fade-in-up ${!monitor.enabled ? 'opacity-50' : ''}`}
     >
       <span className="shrink-0">
-        <ServiceIcon type={monitor.type} size={18} url={monitor.config?.url} faviconUrl={monitor.metrics?.faviconUrl} serviceUrl={monitor.serviceUrl} />
+        <ServiceIcon type={monitor.type} size={18} url={monitor.config?.url} faviconUrl={monitor.metrics?.faviconUrl} serviceUrl={monitor.serviceUrl} customIconUrl={monitor.customIconUrl} />
       </span>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-thistle truncate">{monitor.name}</p>

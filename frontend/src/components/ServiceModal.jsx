@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Plus, Trash2, Wifi, RefreshCw } from 'lucide-react';
+import { X, Plus, Trash2, Wifi, RefreshCw, Image } from 'lucide-react';
 import { useLang } from '../context/LangContext';
 import { monitors as monitorsApi, settings as settingsApi } from '../api';
 import Portal from './Portal';
@@ -200,6 +200,107 @@ function TlsToggle({ config, set, t }) {
         className="w-4 h-4 rounded accent-periwinkle" />
       <span className="text-sm text-thistle">{t('form.tlsCert')}</span>
     </label>
+  );
+}
+
+const CDN_BASE = 'https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg';
+
+function IconPicker({ value, onChange, t, name = '' }) {
+  const [open, setOpen] = React.useState(false);
+  const [search, setSearch] = React.useState('');
+  const [icons, setIcons] = React.useState(null);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState(false);
+
+  const handleOpen = () => {
+    const next = !open;
+    setOpen(next);
+    if (next && !search && name) setSearch(name.toLowerCase());
+    if (icons !== null) return;
+    setLoading(true);
+    setError(false);
+    fetch('https://api.github.com/repos/homarr-labs/dashboard-icons/git/trees/main?recursive=1')
+      .then(r => r.json())
+      .then(data => {
+        const svgs = (data.tree || [])
+          .filter(f => f.type === 'blob' && f.path.startsWith('svg/') && f.path.endsWith('.svg'))
+          .map(f => f.path.slice(4, -4))
+          .sort();
+        setIcons(svgs);
+      })
+      .catch(() => { setIcons([]); setError(true); })
+      .finally(() => setLoading(false));
+  };
+
+  const filtered = icons
+    ? (search.trim() ? icons.filter(n => n.includes(search.toLowerCase())) : icons).slice(0, 80)
+    : [];
+
+  const selectedName = value ? value.split('/').pop().replace('.svg', '') : null;
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        {value && (
+          <div className="flex items-center gap-2 flex-1 px-2.5 py-1.5 bg-surface border border-border rounded-lg">
+            <img src={value} width={20} height={20} style={{ objectFit: 'contain' }} alt="" />
+            <span className="text-xs text-thistle truncate flex-1">{selectedName}</span>
+            <button type="button" onClick={() => onChange('')}
+              className="text-muted hover:text-red-400 shrink-0">
+              <X size={13} />
+            </button>
+          </div>
+        )}
+        {!value && <span className="text-xs text-muted flex-1 italic">{t('form.customIconNone')}</span>}
+        <button type="button" onClick={handleOpen}
+          className={`btn-ghost border border-border px-3 py-2 rounded-lg text-sm whitespace-nowrap flex items-center gap-1.5 shrink-0 ${open ? 'text-periwinkle border-periwinkle/50' : ''}`}>
+          <Image size={13} />
+          {t('form.customIconBrowse')}
+        </button>
+      </div>
+      {open && (
+        <div className="bg-surface border border-border rounded-xl p-3 space-y-2">
+          <input
+            className="input w-full text-sm"
+            placeholder={t('form.customIconSearchPlaceholder')}
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            autoFocus
+          />
+          {loading && <p className="text-xs text-muted text-center py-3">{t('form.customIconLoading')}</p>}
+          {error && <p className="text-xs text-red-400 text-center py-2">{t('form.customIconError')}</p>}
+          {!loading && !error && icons !== null && (
+            <>
+              <div className="grid grid-cols-8 gap-0.5 max-h-52 overflow-y-auto pr-0.5">
+                {filtered.map(name => (
+                  <button
+                    key={name}
+                    type="button"
+                    title={name}
+                    onClick={() => { onChange(`${CDN_BASE}/${name}.svg`); setOpen(false); setSearch(''); }}
+                    className={`flex items-center justify-center p-2 rounded-lg transition-colors ${value === `${CDN_BASE}/${name}.svg` ? 'bg-periwinkle/20 ring-1 ring-periwinkle/50' : 'hover:bg-card'}`}
+                  >
+                    <img
+                      src={`${CDN_BASE}/${name}.svg`}
+                      width={22} height={22}
+                      style={{ objectFit: 'contain' }}
+                      alt={name}
+                      onError={e => { e.currentTarget.style.opacity = '0.12'; }}
+                    />
+                  </button>
+                ))}
+                {filtered.length === 0 && (
+                  <p className="col-span-8 text-xs text-muted text-center py-3">{t('form.customIconNoResults')}</p>
+                )}
+              </div>
+              {!search.trim() && icons.length > 80 && (
+                <p className="text-xs text-muted/60 text-center">{icons.length} {t('form.customIconTotal')}</p>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -678,6 +779,11 @@ function AdvancedSection({ form, setForm, allMonitors, monitor, lang, t, default
           <Field label={t('form.serviceUrl')} value={form.serviceUrl}
             onChange={v => setForm(f => ({ ...f, serviceUrl: v }))} placeholder="https://…" />
 
+          <div>
+            <label className="label">{t('form.customIcon')}</label>
+            <IconPicker value={form.customIconUrl} onChange={v => setForm(f => ({ ...f, customIconUrl: v }))} t={t} name={form.name} />
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <UnitField label={t('form.checkInterval')} value={form.checkInterval} unit="min" min={1}
               onChange={v => setForm(f => ({ ...f, checkInterval: v }))} />
@@ -821,7 +927,7 @@ export default function ServiceModal({ monitor, onClose, onSave }) {
       name: '', type: 'cloudflare', description: '', category: '',
       enabled: true, checkInterval: 1, reportInterval: 6,
       cardMetric: null, serviceUrl: '', showOnStatusPage: true,
-      slaTarget: '', dependsOn: [],
+      slaTarget: '', dependsOn: [], customIconUrl: '',
       config: TYPE_DEFAULTS.cloudflare.config,
     };
     originalFormRef.current = initial;
@@ -843,6 +949,7 @@ export default function ServiceModal({ monitor, onClose, onSave }) {
         showOnStatusPage: monitor.showOnStatusPage !== false,
         slaTarget: monitor.slaTarget != null ? String(monitor.slaTarget) : '',
         dependsOn: monitor.dependsOn?.map(id => String(id)) || [],
+        customIconUrl: monitor.customIconUrl || '',
         config: monitor.config || {},
       };
       originalFormRef.current = monitorForm;
@@ -906,7 +1013,7 @@ export default function ServiceModal({ monitor, onClose, onSave }) {
             <label className="label">{t('form.type')}</label>
             <div className="flex items-stretch gap-2">
               <div className="flex-shrink-0 flex items-center justify-center px-3 py-2 rounded-lg border border-border bg-surface">
-                <ServiceIcon key={form.type} type={form.type} size={18} />
+                <ServiceIcon key={form.type} type={form.type} size={18} customIconUrl={form.customIconUrl} />
               </div>
               <select
                 className="input flex-1"

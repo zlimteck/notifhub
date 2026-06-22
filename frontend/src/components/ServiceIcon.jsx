@@ -112,10 +112,22 @@ function FaviconIcon({ url, size, onError }) {
   );
 }
 
-export default function ServiceIcon({ type, size = 20, url, faviconUrl, serviceUrl }) {
+export default function ServiceIcon({ type, size = 20, url, faviconUrl, serviceUrl, customIconUrl }) {
   const [useFavicon, setUseFavicon] = React.useState(true);
   const [useFallback, setUseFallback] = React.useState(false);
   const Fallback = FALLBACKS[type];
+
+  if (customIconUrl) {
+    return (
+      <img
+        src={customIconUrl}
+        width={size}
+        height={size}
+        style={{ objectFit: 'contain' }}
+        alt=""
+      />
+    );
+  }
 
   // Some self-hosted types require auth even for /favicon.ico — never attempt a
   // live browser fetch for these, it produces 401/404 console errors.

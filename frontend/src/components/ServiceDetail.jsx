@@ -150,7 +150,7 @@ export default function ServiceDetail({ monitor, onClose }) {
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-border shrink-0">
           <div className="flex items-center gap-2.5">
-            <ServiceIcon type={monitor.type} size={20} url={monitor.config?.url} faviconUrl={monitor.metrics?.faviconUrl} serviceUrl={monitor.serviceUrl} />
+            <ServiceIcon type={monitor.type} size={20} url={monitor.config?.url} faviconUrl={monitor.metrics?.faviconUrl} serviceUrl={monitor.serviceUrl} customIconUrl={monitor.customIconUrl} />
             <div>
               <p className="font-semibold text-thistle text-sm">{monitor.name}</p>
               {monitor.description && <p className="text-xs text-muted">{monitor.description}</p>}
@@ -220,11 +220,55 @@ export default function ServiceDetail({ monitor, onClose }) {
                 </div>
               ))}
 
-              {graphs.length === 0 && hist !== null && (
+              {graphs.length === 0 && hist !== null && monitor.type !== 'http' && (
                 <div className="text-center py-8">
                   <p className="text-xs text-muted italic">{t('modal.noData')}</p>
                 </div>
               )}
+
+              {/* HTTP: last status codes list */}
+              {monitor.type === 'http' && hist !== null && (() => {
+                const recent = points
+                  .filter(p => p.metrics?.statusCode != null)
+                  .slice(-10)
+                  .reverse();
+                if (!recent.length) return (
+                  <div className="text-center py-8">
+                    <p className="text-xs text-muted italic">{t('modal.noData')}</p>
+                  </div>
+                );
+                return (
+                  <div className="pt-4 border-t border-border/50">
+                    <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">
+                      {lang === 'fr' ? 'Derniers statuts HTTP' : 'Latest HTTP statuses'}
+                    </p>
+                    <div className="space-y-1">
+                      {recent.map((p, i) => {
+                        const code = p.metrics.statusCode;
+                        const rt   = p.metrics.responseTime;
+                        const cls  =
+                          code >= 500 ? 'bg-red-500/15 text-red-400 border-red-500/30' :
+                          code >= 400 ? 'bg-amber-400/15 text-amber-400 border-amber-400/30' :
+                          code >= 300 ? 'bg-periwinkle/15 text-periwinkle border-periwinkle/30' :
+                          'bg-celadon/15 text-celadon border-celadon/30';
+                        return (
+                          <div key={i} className="flex items-center gap-3 px-3 py-1.5 rounded-lg bg-surface text-xs">
+                            <span className={`font-mono font-bold px-1.5 py-0.5 rounded border text-xs shrink-0 ${cls}`}>
+                              {code}
+                            </span>
+                            <span className="text-muted flex-1">
+                              {new Date(p.ts).toLocaleString(locale)}
+                            </span>
+                            {rt != null && (
+                              <span className="text-muted/60 shrink-0 font-mono">{rt}ms</span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
 
             </>
           )}

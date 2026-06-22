@@ -45,7 +45,6 @@ function resolveProxy(monitor, settings, globalProxy) {
     const saved = settings?.proxies?.find(p => String(p._id) === String(monitor.config.proxyId));
     return saved ? decryptConfig(saved) : globalProxy;
   }
-  if (monitor.config?.proxy?.enabled) return monitor.config.proxy;
   return globalProxy;
 }
 

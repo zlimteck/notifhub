@@ -218,7 +218,7 @@ export default function StatusPage() {
                 {items.map(m => (
                   <div key={m._id} className="px-4 py-3 space-y-2">
                     <div className="flex items-center gap-3">
-                      <ServiceIcon type={m.type} size={16} serviceUrl={m.serviceUrl} faviconUrl={m.faviconUrl} />
+                      <ServiceIcon type={m.type} size={16} serviceUrl={m.serviceUrl} faviconUrl={m.faviconUrl} customIconUrl={m.customIconUrl} />
                       <span className="font-medium text-sm text-thistle flex-1 truncate">{m.name}</span>
                       {m.uptime?.h24 != null && (
                         <span

@@ -302,7 +302,7 @@ export default function Services() {
             return (
               <div key={m._id} className={`card ${!m.enabled ? 'opacity-60' : ''}`}>
                 <div className="flex items-start gap-3">
-                  <span className="shrink-0 mt-0.5"><ServiceIcon type={m.type} size={22} url={m.config?.url} faviconUrl={m.metrics?.faviconUrl} serviceUrl={m.serviceUrl} /></span>
+                  <span className="shrink-0 mt-0.5"><ServiceIcon type={m.type} size={22} url={m.config?.url} faviconUrl={m.metrics?.faviconUrl} serviceUrl={m.serviceUrl} customIconUrl={m.customIconUrl} /></span>
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                       {m.serviceUrl ? (
@@ -342,7 +342,7 @@ export default function Services() {
             const inMaintenance = m.maintenanceUntil && new Date(m.maintenanceUntil) > new Date();
             return (
               <div key={m._id} className={`flex items-center gap-3 px-4 py-2.5 ${!m.enabled ? 'opacity-60' : ''}`}>
-                <span className="shrink-0"><ServiceIcon type={m.type} size={18} url={m.config?.url} faviconUrl={m.metrics?.faviconUrl} serviceUrl={m.serviceUrl} /></span>
+                <span className="shrink-0"><ServiceIcon type={m.type} size={18} url={m.config?.url} faviconUrl={m.metrics?.faviconUrl} serviceUrl={m.serviceUrl} customIconUrl={m.customIconUrl} /></span>
                 <div className="flex-1 min-w-0 flex items-center gap-2">
                   {m.serviceUrl ? (
                     <a href={m.serviceUrl} target="_blank" rel="noreferrer"
