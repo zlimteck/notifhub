@@ -13,6 +13,11 @@ export default {
     sortName: 'Nom',
     search: 'Rechercher…',
     noResults: 'Aucun service ne correspond à la recherche.',
+    view: {
+      grid: 'Vue grille',
+      list: 'Vue liste',
+      summary: 'Vue résumé par catégorie',
+    },
     stats: {
       total: 'Total',
       online: 'En ligne',

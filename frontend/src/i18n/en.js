@@ -13,6 +13,11 @@ export default {
     sortName: 'Name',
     search: 'Search…',
     noResults: 'No services match your search.',
+    view: {
+      grid: 'Grid view',
+      list: 'List view',
+      summary: 'Category summary view',
+    },
     stats: {
       total: 'Total',
       online: 'Online',

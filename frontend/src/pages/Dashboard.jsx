@@ -6,7 +6,7 @@ import { extractValue, getMetricLabel, formatMetricValue, getMetrics } from '../
 import StatusBadge from '../components/StatusBadge';
 import ServiceIcon from '../components/ServiceIcon';
 import ServiceDetail from '../components/ServiceDetail';
-import { RefreshCw, Radio, AlertTriangle, CheckCircle, Clock, GripVertical, Search, LayoutGrid, List, Thermometer, Wrench } from 'lucide-react';
+import { RefreshCw, Radio, AlertTriangle, CheckCircle, Clock, GripVertical, Search, LayoutGrid, List, Thermometer, Wrench, Layers, ChevronDown, ChevronRight } from 'lucide-react';
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragOverlay,
 } from '@dnd-kit/core';
@@ -717,8 +717,14 @@ export default function Dashboard() {
   const [activeId, setActiveId] = useState(null);
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState(() => localStorage.getItem('nh_view') || 'grid');
+  const [expandedCats, setExpandedCats] = useState(new Set());
 
   const toggleView = (mode) => { setViewMode(mode); localStorage.setItem('nh_view', mode); };
+  const toggleCat = (cat) => setExpandedCats(prev => {
+    const next = new Set(prev);
+    next.has(cat) ? next.delete(cat) : next.add(cat);
+    return next;
+  });
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
@@ -846,8 +852,9 @@ export default function Dashboard() {
             ))}
           </select>
           <div className="flex gap-1 shrink-0 border border-border rounded-lg p-0.5">
-            {[['grid', LayoutGrid], ['list', List]].map(([mode, Icon]) => (
+            {[['grid', LayoutGrid], ['list', List], ['summary', Layers]].map(([mode, Icon]) => (
               <button key={mode} onClick={() => toggleView(mode)}
+                title={t(`dashboard.view.${mode}`)}
                 className={`p-1.5 rounded-md transition-colors ${
                   viewMode === mode ? 'bg-periwinkle/20 text-periwinkle' : 'text-muted hover:text-thistle'
                 }`}>
@@ -867,6 +874,17 @@ export default function Dashboard() {
             {[0,1,2,3,4,5].map(i => <SkeletonCard key={i} />)}
           </div>
         )}
+        {loading && viewMode === 'summary' && (
+          <div className="space-y-2">
+            {[0,1,2,3].map(i => (
+              <div key={i} className="card flex items-center gap-3 px-4 py-3 animate-pulse">
+                <div className="skeleton h-3 w-20 rounded" />
+                <div className="flex gap-1 flex-1">{[0,1,2,3,4].map(j => <div key={j} className="skeleton w-3 h-3 rounded-full" />)}</div>
+                <div className="skeleton h-3 w-8 rounded" />
+              </div>
+            ))}
+          </div>
+        )}
 
         {!loading && monitors.length === 0 && (
           <div className="card text-center py-16">
@@ -876,7 +894,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {!loading && viewMode === 'list' ? (
+        {!loading && viewMode === 'list' && (
           <div className="card divide-y divide-border p-1">
             {[...groups.entries()].map(([cat, items]) => (
               <div key={cat}>
@@ -891,7 +909,69 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
-        ) : !loading && (
+        )}
+
+        {!loading && viewMode === 'summary' && (
+          <div className="space-y-2">
+            {[...groups.entries()].map(([cat, items]) => {
+              const label = cat || t('dashboard.uncategorized');
+              const enabled = items.filter(m => m.enabled);
+              const onlineCount = enabled.filter(m => m.status === 'online').length;
+              const hasError = enabled.some(m => ['error', 'offline'].includes(m.status));
+              const hasWarning = enabled.some(m => m.status === 'warning');
+              const allGood = !hasError && !hasWarning && onlineCount === enabled.length;
+              const expanded = expandedCats.has(cat);
+
+              const chipBg = hasError   ? 'border-red-500/30 bg-red-500/5'
+                           : hasWarning ? 'border-amber-400/30 bg-amber-400/5'
+                           : 'border-celadon/20 bg-celadon/5';
+              const StatusIcon = hasError ? AlertTriangle : hasWarning ? AlertTriangle : CheckCircle;
+              const iconColor = hasError ? 'text-red-400' : hasWarning ? 'text-amber-400' : 'text-celadon';
+
+              return (
+                <div key={cat}>
+                  <button
+                    onClick={() => toggleCat(cat)}
+                    className={`w-full card border flex items-center gap-3 px-4 py-3 hover:border-border/80 transition-colors text-left ${chipBg}`}
+                  >
+                    <StatusIcon size={14} className={`shrink-0 ${iconColor}`} />
+                    <span className="font-medium text-sm text-thistle flex-none">{label}</span>
+                    <div className="flex items-center gap-0.5 flex-1 overflow-hidden">
+                      {enabled.map(m => (
+                        <span
+                          key={m._id}
+                          className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                            m.status === 'online'  ? 'bg-celadon' :
+                            m.status === 'warning' ? 'bg-amber-400' :
+                            ['error','offline'].includes(m.status) ? 'bg-red-400' :
+                            'bg-muted/30'
+                          }`}
+                          title={`${m.name} — ${m.status}`}
+                        />
+                      ))}
+                    </div>
+                    <span className={`text-sm font-mono font-semibold shrink-0 ${iconColor}`}>
+                      {onlineCount}/{enabled.length}
+                    </span>
+                    {expanded
+                      ? <ChevronDown size={14} className="text-muted shrink-0" />
+                      : <ChevronRight size={14} className="text-muted shrink-0" />
+                    }
+                  </button>
+                  {expanded && (
+                    <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-3 mt-2">
+                      {items.map(m => (
+                        <SortableCard key={m._id} monitor={m} hist={hist} dailyHist={dailyHist} showGraphs={showGraphs} onSelect={setSelected} t={t} sortMode={sortMode} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {!loading && viewMode === 'grid' && (
           <DndContext sensors={sensors} collisionDetection={closestCenter}
             onDragStart={({ active }) => setActiveId(active.id)}
             onDragEnd={e => { handleDragEnd(e); setActiveId(null); }}
