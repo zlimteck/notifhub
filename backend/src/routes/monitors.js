@@ -154,19 +154,28 @@ router.post('/:id/test', async (req, res) => {
   }
 });
 
-// POST /api/monitors/:id/maintenance  body: { minutes: 60 }
+// POST /api/monitors/:id/maintenance  body: { minutes: 60, startsAt?: ISO string }
 router.post('/:id/maintenance', async (req, res) => {
-  const { minutes } = req.body;
+  const { minutes, startsAt } = req.body;
   if (!minutes || minutes <= 0) return res.status(400).json({ error: 'minutes requis' });
-  const until = new Date(Date.now() + minutes * 60 * 1000);
-  const monitor = await Monitor.findByIdAndUpdate(req.params.id, { maintenanceUntil: until }, { new: true });
+  const start = startsAt ? new Date(startsAt) : new Date();
+  const until = new Date(start.getTime() + minutes * 60 * 1000);
+  const monitor = await Monitor.findByIdAndUpdate(
+    req.params.id,
+    { maintenanceStart: start, maintenanceUntil: until },
+    { new: true }
+  );
   if (!monitor) return res.status(404).json({ error: 'Service introuvable' });
-  res.json({ ok: true, maintenanceUntil: until });
+  res.json({ ok: true, maintenanceStart: start, maintenanceUntil: until });
 });
 
 // DELETE /api/monitors/:id/maintenance
 router.delete('/:id/maintenance', async (req, res) => {
-  const monitor = await Monitor.findByIdAndUpdate(req.params.id, { maintenanceUntil: null }, { new: true });
+  const monitor = await Monitor.findByIdAndUpdate(
+    req.params.id,
+    { maintenanceStart: null, maintenanceUntil: null },
+    { new: true }
+  );
   if (!monitor) return res.status(404).json({ error: 'Service introuvable' });
   res.json({ ok: true });
 });

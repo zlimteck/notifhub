@@ -17,6 +17,7 @@ const monitorSchema = new mongoose.Schema({
   lastError: { type: String, default: null },
   category: { type: String, default: '' },
   position: { type: Number, default: 0 },
+  maintenanceStart: { type: Date, default: null },
   maintenanceUntil: { type: Date, default: null },
   lastDownAt: { type: Date, default: null },
   lastDownNotified: { type: Boolean, default: false },

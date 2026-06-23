@@ -595,9 +595,16 @@ function CardContent({ monitor, hist, dailyHist, showGraphs, onSelect, t, draggi
         </div>
         <div className="flex flex-col items-end gap-1 shrink-0">
           <div className="flex items-center gap-1.5">
-            {monitor.maintenanceUntil && new Date(monitor.maintenanceUntil) > new Date() && (
-              <span className="flex items-center gap-0.5 text-xs text-amber-400" title="En maintenance"><Wrench size={11} /></span>
-            )}
+            {(() => {
+              const _n = new Date();
+              const active = monitor.maintenanceUntil && new Date(monitor.maintenanceUntil) > _n &&
+                (!monitor.maintenanceStart || new Date(monitor.maintenanceStart) <= _n);
+              const upcoming = monitor.maintenanceStart && new Date(monitor.maintenanceStart) > _n &&
+                monitor.maintenanceUntil && new Date(monitor.maintenanceUntil) > _n;
+              if (active) return <span className="flex items-center gap-0.5 text-xs text-amber-400" title="En maintenance"><Wrench size={11} /></span>;
+              if (upcoming) return <span className="flex items-center gap-0.5 text-xs text-periwinkle" title="Maintenance planifiée"><Clock size={11} /></span>;
+              return null;
+            })()}
             <StatusBadge status={monitor.enabled ? monitor.status : 'unknown'} />
           </div>
           <div className="flex items-center gap-1.5">

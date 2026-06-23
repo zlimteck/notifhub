@@ -454,6 +454,12 @@ export default {
       presetValues: [30, 60, 120, 240, 480],
       custom: 'Personnalisé (min)',
       start: 'Démarrer',
+      modeImmediate: 'Immédiate',
+      modeScheduled: 'Planifiée',
+      startAt: 'Date et heure de début',
+      scheduledBadge: 'Planifiée',
+      scheduledAt: (date) => `Planifiée pour le ${date}`,
+      endsAt: (date) => `Fin prévue le ${date}`,
     },
   },
   form: {

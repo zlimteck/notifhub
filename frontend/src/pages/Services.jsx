@@ -5,7 +5,7 @@ import { useToast } from '../context/ToastContext';
 import StatusBadge from '../components/StatusBadge';
 import ServiceModal from '../components/ServiceModal';
 import ServiceIcon from '../components/ServiceIcon';
-import { Plus, Play, Pencil, Trash2, Power, Wrench, X, RefreshCw, LayoutGrid, List, Search, Copy, MoreVertical } from 'lucide-react';
+import { Plus, Play, Pencil, Trash2, Power, Wrench, X, RefreshCw, LayoutGrid, List, Search, Copy, MoreVertical, Clock } from 'lucide-react';
 
 const STATUS_ORDER = { error: 0, offline: 0, warning: 1, online: 2, unknown: 3 };
 
@@ -19,23 +19,53 @@ function timeRemaining(until) {
   return rem > 0 ? `${h}h ${rem}min` : `${h}h`;
 }
 
+function formatDateTime(date) {
+  if (!date) return '';
+  return new Date(date).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' });
+}
+
 function MaintenancePopover({ monitor, onClose, onSet, onCancel }) {
   const { t } = useLang();
   const [custom, setCustom] = useState('');
+  const [mode, setMode] = useState('immediate');
+  const [scheduledStart, setScheduledStart] = useState('');
   const ref = useRef();
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
-    function handle(e) { if (ref.current && !ref.current.contains(e.target)) onClose(); }
+    function handle() { onCloseRef.current(); }
     document.addEventListener('mousedown', handle);
     return () => document.removeEventListener('mousedown', handle);
-  }, [onClose]);
+  }, []);
 
-  const inMaintenance = monitor.maintenanceUntil && new Date(monitor.maintenanceUntil) > new Date();
+  const now = new Date();
+  const inMaintenance = monitor.maintenanceUntil && new Date(monitor.maintenanceUntil) > now &&
+    (!monitor.maintenanceStart || new Date(monitor.maintenanceStart) <= now);
+  const upcomingMaintenance = monitor.maintenanceStart && new Date(monitor.maintenanceStart) > now &&
+    monitor.maintenanceUntil && new Date(monitor.maintenanceUntil) > now;
+
+  function getDefaultStart() {
+    const d = new Date(Date.now() + 60 * 1000);
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  function handleSet(minutes) {
+    let startsAt = null;
+    if (mode === 'scheduled' && scheduledStart) {
+      const [datePart, timePart] = scheduledStart.split('T');
+      const [y, mo, d] = datePart.split('-').map(Number);
+      const [h, mi] = timePart.split(':').map(Number);
+      startsAt = new Date(y, mo - 1, d, h, mi).toISOString();
+    }
+    onSet(minutes, startsAt);
+  }
 
   return (
-    <div ref={ref} className="absolute right-0 top-9 z-50 w-64 card shadow-lg border border-border p-3 space-y-3">
+    <div ref={ref} onMouseDown={e => e.stopPropagation()} className="absolute right-0 top-9 z-50 w-72 card shadow-lg border border-border p-3 space-y-3">
       <p className="text-xs font-semibold text-thistle">{t('services.maintenance.title')}</p>
-      <p className="text-xs text-muted">{t('services.maintenance.hint')}</p>
+
       {inMaintenance ? (
         <div className="space-y-2">
           <p className="text-xs text-amber-400 font-medium">{t('services.actions.maintenanceActive')(timeRemaining(monitor.maintenanceUntil))}</p>
@@ -43,11 +73,42 @@ function MaintenancePopover({ monitor, onClose, onSet, onCancel }) {
             {t('services.actions.maintenanceCancel')}
           </button>
         </div>
-      ) : (
+      ) : upcomingMaintenance ? (
         <div className="space-y-2">
+          <p className="text-xs text-periwinkle font-medium">{t('services.maintenance.scheduledAt')(formatDateTime(monitor.maintenanceStart))}</p>
+          <p className="text-xs text-muted">{t('services.maintenance.endsAt')(formatDateTime(monitor.maintenanceUntil))}</p>
+          <button onClick={onCancel} className="btn-ghost w-full text-xs py-1.5 rounded-lg text-red-400 hover:text-red-300">
+            {t('services.actions.maintenanceCancel')}
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-xs text-muted">{t('services.maintenance.hint')}</p>
+          <div className="flex rounded-lg border border-border overflow-hidden text-xs">
+            <button onClick={() => setMode('immediate')}
+              className={`flex-1 py-1.5 transition-colors ${mode === 'immediate' ? 'bg-periwinkle/20 text-periwinkle' : 'text-muted hover:text-thistle'}`}>
+              {t('services.maintenance.modeImmediate')}
+            </button>
+            <button onClick={() => { setMode('scheduled'); if (!scheduledStart) setScheduledStart(getDefaultStart()); }}
+              className={`flex-1 py-1.5 transition-colors ${mode === 'scheduled' ? 'bg-periwinkle/20 text-periwinkle' : 'text-muted hover:text-thistle'}`}>
+              {t('services.maintenance.modeScheduled')}
+            </button>
+          </div>
+          {mode === 'scheduled' && (
+            <div>
+              <label className="text-xs text-muted block mb-1">{t('services.maintenance.startAt')}</label>
+              <input
+                type="datetime-local"
+                value={scheduledStart}
+                onChange={e => setScheduledStart(e.target.value)}
+                min={(() => { const n = new Date(); const p = x => String(x).padStart(2,'0'); return `${n.getFullYear()}-${p(n.getMonth()+1)}-${p(n.getDate())}T${p(n.getHours())}:${p(n.getMinutes())}`; })()}
+                className="input text-xs py-1.5 w-full"
+              />
+            </div>
+          )}
           <div className="grid grid-cols-3 gap-1">
             {t('services.maintenance.presets').map((label, i) => (
-              <button key={i} onClick={() => onSet(t('services.maintenance.presetValues')[i])}
+              <button key={i} onClick={() => handleSet(t('services.maintenance.presetValues')[i])}
                 className="btn-ghost text-xs py-1.5 rounded-lg border border-border hover:border-periwinkle/40">
                 {label}
               </button>
@@ -59,7 +120,7 @@ function MaintenancePopover({ monitor, onClose, onSet, onCancel }) {
               value={custom} onChange={e => setCustom(e.target.value)}
               className="input text-xs py-1.5 flex-1"
             />
-            <button onClick={() => custom > 0 && onSet(parseInt(custom))}
+            <button onClick={() => custom > 0 && handleSet(parseInt(custom))}
               className="btn-primary text-xs px-3 py-1.5 rounded-lg">
               {t('services.maintenance.start')}
             </button>
@@ -167,8 +228,8 @@ export default function Services() {
     load();
   }
 
-  async function handleSetMaintenance(id, minutes) {
-    await api.setMaintenance(id, minutes);
+  async function handleSetMaintenance(id, minutes, startsAt) {
+    await api.setMaintenance(id, { minutes, startsAt: startsAt || null });
     setMaintenanceOpen(null);
     load();
   }
@@ -191,7 +252,11 @@ export default function Services() {
   const subtitle = `${n} ${n !== 1 ? t('services.subtitle_many') : t('services.subtitle_one')}`;
 
   function renderActions(m) {
-    const inMaintenance = m.maintenanceUntil && new Date(m.maintenanceUntil) > new Date();
+    const now = new Date();
+    const inMaintenance = m.maintenanceUntil && new Date(m.maintenanceUntil) > now &&
+      (!m.maintenanceStart || new Date(m.maintenanceStart) <= now);
+    const upcomingMaintenance = m.maintenanceStart && new Date(m.maintenanceStart) > now &&
+      m.maintenanceUntil && new Date(m.maintenanceUntil) > now;
 
     // Desktop buttons (hidden on mobile)
     const desktopActions = (
@@ -210,14 +275,14 @@ export default function Services() {
           <button
             title={t('services.actions.maintenance')}
             onClick={() => setMaintenanceOpen(maintenanceOpen === m._id ? null : m._id)}
-            className={`btn-ghost p-2 rounded-lg ${inMaintenance ? 'text-amber-400' : ''}`}>
+            className={`btn-ghost p-2 rounded-lg ${inMaintenance ? 'text-amber-400' : upcomingMaintenance ? 'text-periwinkle' : ''}`}>
             <Wrench size={14} />
           </button>
           {maintenanceOpen === m._id && (
             <MaintenancePopover
               monitor={m}
               onClose={() => setMaintenanceOpen(null)}
-              onSet={(minutes) => handleSetMaintenance(m._id, minutes)}
+              onSet={(minutes, startsAt) => handleSetMaintenance(m._id, minutes, startsAt)}
               onCancel={() => handleCancelMaintenance(m._id)}
             />
           )}
@@ -308,7 +373,7 @@ export default function Services() {
           <MaintenancePopover
             monitor={m}
             onClose={() => setMaintenanceOpen(null)}
-            onSet={(minutes) => handleSetMaintenance(m._id, minutes)}
+            onSet={(minutes, startsAt) => handleSetMaintenance(m._id, minutes, startsAt)}
             onCancel={() => handleCancelMaintenance(m._id)}
           />
         )}
@@ -391,7 +456,11 @@ export default function Services() {
       {viewMode === 'card' && (
         <div className="space-y-3">
           {filtered.map(m => {
-            const inMaintenance = m.maintenanceUntil && new Date(m.maintenanceUntil) > new Date();
+            const _now = new Date();
+            const inMaintenance = m.maintenanceUntil && new Date(m.maintenanceUntil) > _now &&
+              (!m.maintenanceStart || new Date(m.maintenanceStart) <= _now);
+            const upcomingMaintenance = m.maintenanceStart && new Date(m.maintenanceStart) > _now &&
+              m.maintenanceUntil && new Date(m.maintenanceUntil) > _now;
             return (
               <div key={m._id} className={`card ${!m.enabled ? 'opacity-60' : ''}`}>
                 <div className="flex items-start gap-3">
@@ -410,6 +479,11 @@ export default function Services() {
                       {inMaintenance && (
                         <span className="text-xs px-1.5 py-0.5 rounded bg-amber-900/30 text-amber-400 border border-amber-900/40 flex items-center gap-1">
                           <Wrench size={10} /> {timeRemaining(m.maintenanceUntil)}
+                        </span>
+                      )}
+                      {upcomingMaintenance && (
+                        <span className="text-xs px-1.5 py-0.5 rounded bg-periwinkle/10 text-periwinkle border border-periwinkle/30 flex items-center gap-1">
+                          <Clock size={10} /> {t('services.maintenance.scheduledBadge')}
                         </span>
                       )}
                     </div>
@@ -432,7 +506,11 @@ export default function Services() {
       {viewMode === 'list' && (
         <div className="card divide-y divide-border p-0 overflow-hidden">
           {filtered.map(m => {
-            const inMaintenance = m.maintenanceUntil && new Date(m.maintenanceUntil) > new Date();
+            const _now2 = new Date();
+            const inMaintenance = m.maintenanceUntil && new Date(m.maintenanceUntil) > _now2 &&
+              (!m.maintenanceStart || new Date(m.maintenanceStart) <= _now2);
+            const upcomingMaintenance = m.maintenanceStart && new Date(m.maintenanceStart) > _now2 &&
+              m.maintenanceUntil && new Date(m.maintenanceUntil) > _now2;
             return (
               <div key={m._id} className={`flex items-center gap-3 px-4 py-2.5 ${!m.enabled ? 'opacity-60' : ''}`}>
                 <span className="shrink-0"><ServiceIcon type={m.type} size={18} url={m.config?.url} faviconUrl={m.metrics?.faviconUrl} serviceUrl={m.serviceUrl} customIconUrl={m.customIconUrl} /></span>
@@ -446,6 +524,7 @@ export default function Services() {
                     <span className="font-medium text-thistle text-sm truncate">{m.name}</span>
                   )}
                   {inMaintenance && <Wrench size={11} className="text-amber-400 shrink-0" />}
+                  {upcomingMaintenance && <Clock size={11} className="text-periwinkle shrink-0" />}
                 </div>
                 <span className="sm:hidden shrink-0"><StatusBadge status={m.enabled ? m.status : 'unknown'} dotOnly /></span>
                 <span className="hidden sm:inline-flex shrink-0"><StatusBadge status={m.enabled ? m.status : 'unknown'} /></span>

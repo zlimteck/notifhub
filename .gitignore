@@ -21,6 +21,7 @@ mongo_data/
 # OS
 .DS_Store
 Thumbs.db
+Icon?
 
 # IDE
 .vscode/

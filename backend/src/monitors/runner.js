@@ -52,14 +52,18 @@ async function runCheck(monitor, globalProxy = null, lang = 'fr') {
   const handler = handlers[monitor.type];
   if (!handler) return;
 
-  // Skip checks during maintenance window
-  if (monitor.maintenanceUntil && new Date(monitor.maintenanceUntil) > new Date()) {
+  const now = new Date();
+  const maintenanceActive = monitor.maintenanceUntil && new Date(monitor.maintenanceUntil) > now &&
+    (!monitor.maintenanceStart || new Date(monitor.maintenanceStart) <= now);
+
+  // Skip checks during active maintenance window
+  if (maintenanceActive) {
     console.log(`[Runner] Maintenance: ${monitor.name} — skip until ${monitor.maintenanceUntil}`);
     return;
   }
   // Auto-clear expired maintenance
-  if (monitor.maintenanceUntil && new Date(monitor.maintenanceUntil) <= new Date()) {
-    await Monitor.findByIdAndUpdate(monitor._id, { maintenanceUntil: null });
+  if (monitor.maintenanceUntil && new Date(monitor.maintenanceUntil) <= now) {
+    await Monitor.findByIdAndUpdate(monitor._id, { maintenanceStart: null, maintenanceUntil: null });
   }
 
   console.log(`[Runner] Check: ${monitor.name} (${monitor.type})`);

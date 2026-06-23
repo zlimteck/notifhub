@@ -11,6 +11,18 @@
 
 ![Dashboard](docs/screenshots/1-Dashboard.png)
 
+## Table of contents
+
+- [Features](#features)
+- [Stack](#stack)
+- [Quick start](#quick-start)
+- [Available monitors](#available-monitors)
+- [Alerts sent per monitor type](#alerts-sent-per-monitor-type)
+- [Notifications (Apprise)](#notifications-apprise)
+- [MCP Server](#mcp-server)
+- [Orveil AI](#orveil-ai)
+- [Environment variables](#environment-variables)
+- [License](#license)
 
 ## Features
 
@@ -25,7 +37,7 @@
 - **Post-mortem reports** — attach a structured post-mortem (summary, root cause, impact, resolution, lessons learned) to any resolved incident
 - **SLA tracking** — set a target uptime % per monitor; met/breached indicator displayed on the Stats page
 - **Statistics** — 30-day global view: uptime per service with trend, SLA status, incident count, MTTR, MTTD, severity breakdown, notification log, incident heatmap by day/hour
-- **Maintenance windows** — per-service maintenance mode (30 min to 8 h presets or custom) — no alerts or incidents during the window
+- **Maintenance windows** — per-service maintenance mode, immediate or scheduled (date/time picker); presets 30 min to 8 h or custom duration; upcoming windows shown as a badge on the card — no alerts or incidents during the window
 - **Monitor dependencies** — link a monitor to a parent; down alerts are suppressed when the parent is also down
 - **Backup & restore** — export all monitors and settings as JSON; import on another instance (Settings page)
 - **Status badges** — embeddable SVG badge per service (`/api/badge/:id`) with live status color; Markdown and HTML snippets available in the service detail modal
