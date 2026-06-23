@@ -32,6 +32,7 @@ export const monitors = {
   update: (id, data) => api.put(`/monitors/${id}`, data).then(r => r.data),
   toggle: (id) => api.patch(`/monitors/${id}/toggle`).then(r => r.data),
   run: (id) => api.post(`/monitors/${id}/run`).then(r => r.data),
+  clone: (id) => api.post(`/monitors/${id}/clone`).then(r => r.data),
   delete: (id) => api.delete(`/monitors/${id}`).then(r => r.data),
   reorder: (items) => api.patch('/monitors/reorder', { items }).then(r => r.data),
   setMaintenance: (id, minutes) => api.post(`/monitors/${id}/maintenance`, { minutes }).then(r => r.data),

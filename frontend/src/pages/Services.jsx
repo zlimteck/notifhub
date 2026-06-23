@@ -5,7 +5,7 @@ import { useToast } from '../context/ToastContext';
 import StatusBadge from '../components/StatusBadge';
 import ServiceModal from '../components/ServiceModal';
 import ServiceIcon from '../components/ServiceIcon';
-import { Plus, Play, Pencil, Trash2, Power, Wrench, X, RefreshCw, LayoutGrid, List, Search } from 'lucide-react';
+import { Plus, Play, Pencil, Trash2, Power, Wrench, X, RefreshCw, LayoutGrid, List, Search, Copy, MoreVertical } from 'lucide-react';
 
 const STATUS_ORDER = { error: 0, offline: 0, warning: 1, online: 2, unknown: 3 };
 
@@ -79,6 +79,7 @@ export default function Services() {
   const [runningAll, setRunningAll] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [maintenanceOpen, setMaintenanceOpen] = useState(null);
+  const [kebabOpen, setKebabOpen] = useState(null);
   const [search, setSearch] = useState('');
   const [sortMode, setSortMode] = useState('status');
   const [viewMode, setViewMode] = useState(() => localStorage.getItem('nh_services_view') || 'card');
@@ -94,6 +95,15 @@ export default function Services() {
     const timer = setInterval(load, 15000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    if (!kebabOpen) return;
+    function close(e) {
+      if (!e.target.closest('[data-kebab]')) setKebabOpen(null);
+    }
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [kebabOpen]);
 
   const sorted = useMemo(() => {
     if (sortMode === 'name') return [...items].sort((a, b) => a.name.localeCompare(b.name));
@@ -146,6 +156,11 @@ export default function Services() {
     }, 2000);
   }
 
+  async function handleClone(id) {
+    await api.clone(id);
+    load();
+  }
+
   async function handleDelete(id) {
     await api.delete(id);
     setConfirmDelete(null);
@@ -177,8 +192,10 @@ export default function Services() {
 
   function renderActions(m) {
     const inMaintenance = m.maintenanceUntil && new Date(m.maintenanceUntil) > new Date();
-    return (
-      <div className="flex items-center gap-1 shrink-0">
+
+    // Desktop buttons (hidden on mobile)
+    const desktopActions = (
+      <div className="hidden sm:flex items-center gap-1 shrink-0">
         <button title={t('services.actions.run')} onClick={() => handleRun(m._id)}
           disabled={running[m._id] || !m.enabled}
           className="btn-ghost p-2 rounded-lg">
@@ -208,12 +225,13 @@ export default function Services() {
         <button title={t('services.actions.edit')} onClick={() => setModal(m)} className="btn-ghost p-2 rounded-lg">
           <Pencil size={14} />
         </button>
+        <button title={t('services.actions.clone')} onClick={() => handleClone(m._id)} className="btn-ghost p-2 rounded-lg">
+          <Copy size={14} />
+        </button>
         {confirmDelete === m._id ? (
           <>
-            <button
-              onClick={() => handleDelete(m._id)}
-              className="text-xs px-2 py-1 rounded-lg bg-red-900/30 text-red-400 border border-red-900/40 hover:bg-red-900/50 transition-colors"
-            >
+            <button onClick={() => handleDelete(m._id)}
+              className="text-xs px-2 py-1 rounded-lg bg-red-900/30 text-red-400 border border-red-900/40 hover:bg-red-900/50 transition-colors">
               {t('incidents.confirmDelete')}
             </button>
             <button onClick={() => setConfirmDelete(null)} className="p-2 rounded-lg text-muted hover:text-thistle transition-colors">
@@ -226,6 +244,81 @@ export default function Services() {
             <Trash2 size={14} />
           </button>
         )}
+      </div>
+    );
+
+    // Mobile kebab menu (visible only on mobile)
+    const mobileActions = (
+      <div data-kebab className="relative sm:hidden shrink-0 flex items-center">
+        <button
+          onClick={() => setKebabOpen(kebabOpen === m._id ? null : m._id)}
+          className="btn-ghost p-2 rounded-lg">
+          <MoreVertical size={16} />
+        </button>
+        {kebabOpen === m._id && (
+          <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-xl shadow-xl py-1 min-w-[160px]">
+            <button onClick={() => { handleRun(m._id); setKebabOpen(null); }}
+              disabled={running[m._id] || !m.enabled}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-ink hover:bg-granite-3 active:bg-granite-3 disabled:opacity-40 transition-colors">
+              <Play size={13} className={running[m._id] ? 'animate-pulse text-periwinkle' : 'text-muted'} />
+              {t('services.actions.run')}
+            </button>
+            <button onClick={() => { handleToggle(m._id); setKebabOpen(null); }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-ink hover:bg-granite-3 active:bg-granite-3 transition-colors">
+              <Power size={13} className={m.enabled ? 'text-celadon' : 'text-muted'} />
+              {m.enabled ? t('services.actions.disable') : t('services.actions.enable')}
+            </button>
+            <button onClick={() => { setKebabOpen(null); setMaintenanceOpen(m._id); }}
+              className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-granite-3 active:bg-granite-3 transition-colors ${inMaintenance ? 'text-amber-400' : 'text-ink'}`}>
+              <Wrench size={13} className={inMaintenance ? 'text-amber-400' : 'text-muted'} />
+              {t('services.actions.maintenance')}
+            </button>
+            <div className="h-px bg-border mx-2 my-1" />
+            <button onClick={() => { setModal(m); setKebabOpen(null); }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-ink hover:bg-granite-3 active:bg-granite-3 transition-colors">
+              <Pencil size={13} className="text-muted" />
+              {t('services.actions.edit')}
+            </button>
+            <button onClick={() => { handleClone(m._id); setKebabOpen(null); }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-ink hover:bg-granite-3 active:bg-granite-3 transition-colors">
+              <Copy size={13} className="text-muted" />
+              {t('services.actions.clone')}
+            </button>
+            <div className="h-px bg-border mx-2 my-1" />
+            {confirmDelete === m._id ? (
+              <div className="flex items-center gap-1 px-2 py-1">
+                <button onClick={() => { handleDelete(m._id); setKebabOpen(null); }}
+                  className="flex-1 text-xs px-2 py-1.5 rounded-lg bg-red-900/30 text-red-400 border border-red-900/40 hover:bg-red-900/50 transition-colors">
+                  {t('incidents.confirmDelete')}
+                </button>
+                <button onClick={() => setConfirmDelete(null)} className="p-1.5 rounded-lg text-muted hover:text-thistle transition-colors">
+                  <X size={13} />
+                </button>
+              </div>
+            ) : (
+              <button onClick={() => setConfirmDelete(m._id)}
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors">
+                <Trash2 size={13} />
+                {t('services.actions.delete')}
+              </button>
+            )}
+          </div>
+        )}
+        {maintenanceOpen === m._id && (
+          <MaintenancePopover
+            monitor={m}
+            onClose={() => setMaintenanceOpen(null)}
+            onSet={(minutes) => handleSetMaintenance(m._id, minutes)}
+            onCancel={() => handleCancelMaintenance(m._id)}
+          />
+        )}
+      </div>
+    );
+
+    return (
+      <div className="flex items-center shrink-0">
+        {desktopActions}
+        {mobileActions}
       </div>
     );
   }

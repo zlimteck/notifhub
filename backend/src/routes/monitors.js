@@ -66,6 +66,18 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+router.post('/:id/clone', async (req, res) => {
+  try {
+    const src = await Monitor.findById(req.params.id);
+    if (!src) return res.status(404).json({ error: 'Service introuvable' });
+    const { _id, createdAt, updatedAt, status, lastChecked, lastReported, lastState, metrics, lastError, lastDownAt, lastDownNotified, ...fields } = src.toObject();
+    const clone = await Monitor.create({ ...fields, name: `${src.name} (copy)`, status: 'unknown', enabled: false });
+    res.status(201).json(clone);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 router.patch('/:id/toggle', async (req, res) => {
   const monitor = await Monitor.findById(req.params.id);
   if (!monitor) return res.status(404).json({ error: 'Service introuvable' });

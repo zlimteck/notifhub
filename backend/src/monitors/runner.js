@@ -100,7 +100,7 @@ async function runCheck(monitor, globalProxy = null, lang = 'fr') {
 
   const prevStatus = monitor.status;
   await Monitor.findByIdAndUpdate(monitor._id, update);
-  sse.broadcast('monitor', { id: monitor._id, ...update });
+  sse.broadcast('monitor', { id: monitor._id, name: monitor.name, prevStatus, ...update });
 
   // Snapshot
   MetricSnapshot.create({

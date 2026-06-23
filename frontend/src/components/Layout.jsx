@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Radio, Bell, Settings, Menu, X, Code2, Siren, LogOut, Sun, Moon, BarChart2, GitBranch } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useLang } from '../context/LangContext';
+import { useToast } from '../context/ToastContext';
 import { incidents as incidentsApi } from '../api';
 
 function NavItem({ to, icon: Icon, label, onClick, badge }) {
@@ -91,6 +92,8 @@ export default function Layout() {
   const location = useLocation();
   const { logout } = useAuth();
   const { t } = useLang();
+  const { add: addToast } = useToast();
+  const mountedAt = useRef(Date.now());
 
   useEffect(() => setSidebarOpen(false), [location.pathname]);
 
@@ -104,7 +107,16 @@ export default function Layout() {
     const timer = setInterval(fetchIncidents, 60000);
 
     const es = new EventSource(`/api/events?token=${token}`);
-    es.addEventListener('monitor', () => fetchIncidents());
+    es.addEventListener('monitor', (e) => {
+      fetchIncidents();
+      // Suppress toasts for the first 5s after page load to avoid spamming on connect
+      if (Date.now() - mountedAt.current < 5000) return;
+      const { name, prevStatus, status } = JSON.parse(e.data);
+      if (!prevStatus || prevStatus === status || prevStatus === 'unknown') return;
+      if (status === 'error') addToast(`${name} — ${t('toast.statusError')}`, 'error');
+      else if (status === 'warning') addToast(`${name} — ${t('toast.statusWarning')}`, 'warning');
+      else if (status === 'online') addToast(`${name} — ${t('toast.statusOnline')}`, 'success');
+    });
     es.onerror = () => {};
 
     return () => { clearInterval(timer); es.close(); };

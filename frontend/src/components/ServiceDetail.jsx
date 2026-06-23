@@ -212,8 +212,10 @@ export default function ServiceDetail({ monitor, onClose }) {
               {hist !== null && (() => {
                 const recent = points
                   .filter(p => p.metrics?.statusCode != null)
-                  .slice(-10)
-                  .reverse();
+                  .slice(-50)
+                  .reverse()
+                  .filter((p, i, arr) => i === 0 || p.metrics.statusCode !== arr[i - 1].metrics.statusCode)
+                  .slice(0, 10);
                 if (!recent.length) return null;
                 return (
                   <div className="pt-4 border-t border-border/50">

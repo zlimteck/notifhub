@@ -426,6 +426,7 @@ export default {
       enable: 'Enable',
       disable: 'Disable',
       edit: 'Edit',
+      clone: 'Duplicate',
       delete: 'Delete',
       deleteConfirm: (name) => `Delete "${name}"?`,
       maintenance: 'Maintenance',
@@ -650,5 +651,10 @@ export default {
     incidentClosed: 'And automatically closed.',
     incidentReason: "Because we don't monitor pages that don't exist.",
     back: 'Back to dashboard',
+  },
+  toast: {
+    statusError:   'is down',
+    statusWarning: 'is degraded',
+    statusOnline:  'is back online',
   },
 };
