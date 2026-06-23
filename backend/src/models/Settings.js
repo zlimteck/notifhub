@@ -36,6 +36,7 @@ const settingsSchema = new mongoose.Schema({
     default: [],
   },
   notificationLanguage: { type: String, default: 'fr' },
+  notificationCooldown: { type: Number, default: 0 }, // minutes, 0 = disabled
   adaptivePolling: {
     enabled:       { type: Boolean, default: true },
     errorInterval: { type: Number,  default: 30 },  // seconds

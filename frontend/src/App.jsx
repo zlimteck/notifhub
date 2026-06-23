@@ -16,6 +16,7 @@ import ApiDocs from './pages/ApiDocs';
 import Login from './pages/Login';
 import StatusPage from './pages/StatusPage';
 import NotFound from './pages/NotFound';
+import KonamiEasterEgg from './components/KonamiEasterEgg';
 
 function AuthGuard() {
   const { token, loading } = useAuth();
@@ -55,6 +56,7 @@ export default function App() {
           </Route>
         </Route>
       </Routes>
+      <KonamiEasterEgg />
     </ToastProvider>
     </AuthProvider>
     </LangProvider>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { settings as api, auth as authApi, ai as aiApi } from '../api';
-import { Save, Send, Info, KeyRound, CalendarClock, BarChart2, Globe, Copy, Check, RefreshCw, Server, Download, Upload, AlertTriangle, Network, Wifi, Plus, Pencil, Trash2, ChevronDown, ChevronUp, Bot, Zap } from 'lucide-react';
+import { Save, Send, Info, KeyRound, CalendarClock, BarChart2, Globe, Copy, Check, RefreshCw, Server, Download, Upload, AlertTriangle, Network, Wifi, Plus, Pencil, Trash2, ChevronDown, ChevronUp, Bot, Zap, BellOff } from 'lucide-react';
 import { useLang } from '../context/LangContext';
 import { useToast } from '../context/ToastContext';
 
@@ -292,11 +292,15 @@ function ChangePassword() {
   );
 }
 
+const TABS = ['notifications', 'monitoring', 'integrations', 'system'];
+
 export default function Settings() {
   const { t } = useLang();
   const toast = useToast();
+  const [tab, setTab] = useState('notifications');
+  const [tabOpen, setTabOpen] = useState(false);
   const [proxies, setProxies] = useState([]);
-  const [form, setForm] = useState({ appriseUrls: [], appriseApiUrl: 'http://apprise:8000', weeklyReport: { enabled: false, dayOfWeek: 1, hour: 8 }, showGraphs: true, statusPage: { title: '', description: '', logoUrl: '', accentColor: '', footerText: '' }, adaptivePolling: { enabled: true, errorInterval: 30 } });
+  const [form, setForm] = useState({ appriseUrls: [], appriseApiUrl: 'http://apprise:8000', weeklyReport: { enabled: false, dayOfWeek: 1, hour: 8 }, showGraphs: true, statusPage: { title: '', description: '', logoUrl: '', accentColor: '', footerText: '' }, adaptivePolling: { enabled: true, errorInterval: 30 }, notificationCooldown: 0 });
   const [urlsText, setUrlsText] = useState('');
   const [testing, setTesting] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -320,6 +324,7 @@ export default function Settings() {
           showGraphs: s.showGraphs !== false,
           statusPage: s.statusPage || { title: '', description: '', logoUrl: '', accentColor: '', footerText: '' },
           adaptivePolling: s.adaptivePolling || { enabled: true, errorInterval: 30 },
+          notificationCooldown: s.notificationCooldown ?? 0,
         });
         setProxies(s.proxies || []);
         setUrlsText((s.appriseUrls || []).join('\n'));
@@ -346,6 +351,7 @@ export default function Settings() {
       showGraphs: form.showGraphs,
       statusPage: form.statusPage,
       adaptivePolling: form.adaptivePolling,
+      notificationCooldown: form.notificationCooldown,
       ...patch,
     });
     toast.add(t('settings.saved'), 'success');
@@ -426,6 +432,40 @@ export default function Settings() {
         <p className="text-xs md:text-sm text-muted mt-0.5">{t('settings.subtitle')}</p>
       </div>
 
+      {/* Tab bar — dropdown on mobile, pills on desktop */}
+      <div className="sm:hidden relative">
+        <button
+          type="button"
+          onClick={() => setTabOpen(o => !o)}
+          className="flex items-center justify-between w-full px-3 py-2 bg-granite-3/50 border border-border rounded-xl text-sm font-medium text-thistle"
+        >
+          {t(`settings.tabs.${tab}`)}
+          <ChevronDown size={15} className={`text-muted transition-transform ${tabOpen ? 'rotate-180' : ''}`} />
+        </button>
+        {tabOpen && (
+          <div className="absolute top-full mt-1 left-0 right-0 z-20 bg-surface border border-border rounded-xl shadow-lg overflow-hidden">
+            {TABS.map(key => (
+              <button key={key} type="button"
+                onClick={() => { setTab(key); setTabOpen(false); }}
+                className={`w-full text-left px-3 py-2.5 text-sm font-medium transition-colors ${tab === key ? 'text-thistle bg-granite-3/60' : 'text-muted hover:text-thistle hover:bg-granite-3/30'}`}>
+                {t(`settings.tabs.${key}`)}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="hidden sm:flex gap-1 p-1 bg-granite-3/50 rounded-xl border border-border w-fit">
+        {TABS.map(key => (
+          <button key={key} type="button"
+            onClick={() => setTab(key)}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${tab === key ? 'bg-surface text-thistle shadow-sm' : 'text-muted hover:text-thistle'}`}>
+            {t(`settings.tabs.${key}`)}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Notifications ── */}
+      {tab === 'notifications' && <>
       <form onSubmit={handleSaveApprise} className="card space-y-4">
           <h2 className="font-semibold text-thistle text-sm flex items-center gap-2">
             <svg className="w-4 h-4 shrink-0" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
@@ -531,6 +571,42 @@ export default function Settings() {
 
       <form onSubmit={e => { e.preventDefault(); saveAll(); }} className="card space-y-4">
         <h2 className="font-semibold text-thistle text-sm flex items-center gap-2">
+          <BellOff size={14} className="text-periwinkle" /> {t('settings.notificationCooldown.title')}
+        </h2>
+        <p className="text-xs text-muted">{t('settings.notificationCooldown.hint')}</p>
+        <div className="max-w-48">
+          <label className="label">{t('settings.notificationCooldown.label')}</label>
+          <input type="number" min="0" max="1440" className="input"
+            value={form.notificationCooldown ?? 0}
+            onChange={e => setForm(f => ({ ...f, notificationCooldown: +e.target.value }))} />
+        </div>
+        <div className="flex items-center gap-3 pt-1">
+          <button type="submit" className="btn-primary"><Save size={14} /> {t('settings.save')}</button>
+        </div>
+      </form>
+      </>}
+
+      {/* ── Monitoring ── */}
+      {tab === 'monitoring' && <>
+      <div className="card space-y-3">
+        <h2 className="font-semibold text-thistle text-sm flex items-center gap-2">
+          <BarChart2 size={14} className="text-periwinkle" /> {t('settings.display.title')}
+        </h2>
+        <p className="text-xs text-muted">{t('settings.display.hint')}</p>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" className="w-4 h-4 rounded accent-periwinkle"
+            checked={form.showGraphs}
+            onChange={e => {
+              const showGraphs = e.target.checked;
+              setForm(f => ({ ...f, showGraphs }));
+              saveAll({ showGraphs });
+            }} />
+          <span className="text-sm text-thistle">{t('settings.display.showGraphs')}</span>
+        </label>
+      </div>
+
+      <form onSubmit={e => { e.preventDefault(); saveAll(); }} className="card space-y-4">
+        <h2 className="font-semibold text-thistle text-sm flex items-center gap-2">
           <Zap size={14} className="text-periwinkle" /> {t('settings.adaptivePolling.title')}
         </h2>
         <p className="text-xs text-muted">{t('settings.adaptivePolling.hint')}</p>
@@ -553,28 +629,9 @@ export default function Settings() {
           </div>
         )}
         <div className="flex items-center gap-3 pt-1">
-          <button type="submit" className="btn-primary">
-            <Save size={14} /> {t('settings.save')}
-          </button>
+          <button type="submit" className="btn-primary"><Save size={14} /> {t('settings.save')}</button>
         </div>
       </form>
-
-      <div className="card space-y-3">
-        <h2 className="font-semibold text-thistle text-sm flex items-center gap-2">
-          <BarChart2 size={14} className="text-periwinkle" /> {t('settings.display.title')}
-        </h2>
-        <p className="text-xs text-muted">{t('settings.display.hint')}</p>
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input type="checkbox" className="w-4 h-4 rounded accent-periwinkle"
-            checked={form.showGraphs}
-            onChange={e => {
-              const showGraphs = e.target.checked;
-              setForm(f => ({ ...f, showGraphs }));
-              saveAll({ showGraphs });
-            }} />
-          <span className="text-sm text-thistle">{t('settings.display.showGraphs')}</span>
-        </label>
-      </div>
 
       <form onSubmit={e => { e.preventDefault(); saveAll(); }} className="card space-y-4">
         <h2 className="font-semibold text-thistle text-sm flex items-center gap-2">
@@ -636,13 +693,12 @@ export default function Settings() {
             </a>
           </div>
         </div>
-        <button type="submit" className="btn-primary">
-          <Save size={14} /> {t('settings.save')}
-        </button>
+        <button type="submit" className="btn-primary"><Save size={14} /> {t('settings.save')}</button>
       </form>
+      </>}
 
-      <ChangePassword />
-
+      {/* ── Intégrations ── */}
+      {tab === 'integrations' && <>
       <ProxiesCard proxies={proxies} setProxies={setProxies} t={t} />
 
       {/* AI Widget */}
@@ -798,6 +854,11 @@ export default function Settings() {
           </div>
         </div>
       </div>
+      </> }
+
+      {/* ── Système ── */}
+      {tab === 'system' && <>
+      <ChangePassword />
 
       <div className="card space-y-4">
         <h2 className="font-semibold text-thistle text-sm flex items-center gap-2">
@@ -842,6 +903,7 @@ export default function Settings() {
           ))}
         </div>
       </div>
+      </> }
     </div>
   );
 }

@@ -204,10 +204,19 @@ async function runCheck(monitor, globalProxy = null, lang = 'fr') {
     const isRecovery = notif.level === 'success';
 
     if (isDown) {
+      // Check cooldown — suppress if last down notification was sent too recently
+      const cooldownMs = (settings?.notificationCooldown ?? 0) * 60 * 1000;
+      if (cooldownMs > 0 && monitor.lastNotifiedAt) {
+        const elapsed = now - new Date(monitor.lastNotifiedAt).getTime();
+        if (elapsed < cooldownMs) {
+          console.log(`[Runner] Cooldown active (${Math.round((cooldownMs - elapsed) / 1000)}s left): ${monitor.name}`);
+          continue;
+        }
+      }
       // Only notify if we haven't already notified for this outage.
       const claimed = await Monitor.findOneAndUpdate(
         { _id: monitor._id, lastDownNotified: { $ne: true } },
-        { $set: { lastDownNotified: true, lastDownAt: new Date() } },
+        { $set: { lastDownNotified: true, lastDownAt: new Date(), lastNotifiedAt: new Date() } },
         { new: false }
       );
       if (claimed) {

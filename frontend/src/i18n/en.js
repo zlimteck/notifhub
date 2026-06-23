@@ -129,6 +129,12 @@ export default {
   settings: {
     title: 'Settings',
     subtitle: 'Notifications & infrastructure',
+    tabs: {
+      notifications: 'Notifications',
+      monitoring: 'Monitoring',
+      integrations: 'Integrations',
+      system: 'System',
+    },
     loading: 'Loading…',
     apprise: {
       title: 'Notification channels (Apprise)',
@@ -227,6 +233,11 @@ export default {
       hint: 'When a service is in error, automatically reduces the check interval to detect recovery faster.',
       enable: 'Enable adaptive polling',
       errorInterval: 'Error mode interval (seconds)',
+    },
+    notificationCooldown: {
+      title: 'Notification cooldown',
+      hint: 'Minimum delay between two alerts for the same service. Prevents notification storms when a service flaps. 0 = disabled.',
+      label: 'Cooldown (minutes)',
     },
     proxies: {
       title: 'Proxies',

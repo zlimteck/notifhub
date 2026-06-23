@@ -129,6 +129,12 @@ export default {
   settings: {
     title: 'Paramètres',
     subtitle: 'Notifications et infrastructure',
+    tabs: {
+      notifications: 'Notifications',
+      monitoring: 'Monitoring',
+      integrations: 'Intégrations',
+      system: 'Système',
+    },
     loading: 'Chargement…',
     apprise: {
       title: 'Canaux de notification (Apprise)',
@@ -227,6 +233,11 @@ export default {
       hint: "Quand un service est en erreur, réduit automatiquement l'intervalle de vérification pour détecter la reprise plus rapidement.",
       enable: 'Activer le polling adaptatif',
       errorInterval: 'Intervalle en mode erreur (secondes)',
+    },
+    notificationCooldown: {
+      title: 'Cooldown des notifications',
+      hint: "Délai minimum entre deux alertes pour un même service. Évite les rafales de notifications si un service flap. 0 = désactivé.",
+      label: 'Cooldown (minutes)',
     },
     proxies: {
       title: 'Proxies',
