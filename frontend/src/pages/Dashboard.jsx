@@ -299,7 +299,7 @@ function MetricsBlock({ monitor }) {
           {metrics.statusCode ?? '—'}
         </span>
         <span className="text-muted">·</span>
-        <span className="text-muted">{metrics.responseTime != null ? `${metrics.responseTime}ms` : '—'}</span>
+        <span className={metrics.responseTime != null ? (metrics.responseTime > 200 ? 'text-amber-400 font-medium' : 'text-thistle font-medium') : 'text-muted'}>{metrics.responseTime != null ? `${metrics.responseTime}ms` : '—'}</span>
         {!metrics.ok && metrics.errMsg && (
           <span className="text-red-400 truncate">{metrics.errMsg}</span>
         )}
@@ -331,9 +331,21 @@ function MetricsBlock({ monitor }) {
 
   if (type === 'ping') return (
     <div className="flex gap-4 text-xs text-muted">
-      <span>{t('metrics.latency')} <span className={metrics.latency > 200 ? 'text-amber-400 font-medium' : 'text-thistle font-medium'}>{metrics.latency != null ? `${metrics.latency}ms` : '—'}</span></span>
+      <span className={metrics.latency != null ? (metrics.latency > 200 ? 'text-amber-400 font-medium' : 'text-thistle font-medium') : 'text-muted'}>{metrics.latency != null ? `${metrics.latency}ms` : '—'}</span>
       <span>{t('metrics.loss')} <span className={metrics.loss > 0 ? 'text-amber-400 font-medium' : 'text-celadon font-medium'}>{metrics.loss}%</span></span>
       <span className="text-muted/60">:{metrics.port}</span>
+    </div>
+  );
+
+  if (type === 'portforward') return (
+    <div className="space-y-1 text-xs text-muted">
+      <div className="flex gap-4">
+        {metrics.latency != null
+          ? <span className={metrics.latency > 200 ? 'text-amber-400 font-medium' : 'text-thistle font-medium'}>{metrics.latency}ms</span>
+          : metrics.errorType != null && <span className="text-red-400 font-medium">{metrics.errorType === 'refused' ? t('form.fields.portforward.errorRefused') : t('form.fields.portforward.errorTimeout')}</span>
+        }
+      </div>
+      <p className="text-muted/60">{metrics.host}:{metrics.port}</p>
     </div>
   );
 
@@ -486,7 +498,7 @@ function MetricsBlock({ monitor }) {
     <div className="space-y-1 text-xs text-muted">
       <div className="flex items-center gap-2">
         <span>{metrics.modelsCount ?? '—'} modèle{metrics.modelsCount !== 1 ? 's' : ''}</span>
-        {metrics.responseTime != null && <><span>·</span><span>{metrics.responseTime}ms</span></>}
+        {metrics.responseTime != null && <><span>·</span><span className={metrics.responseTime > 200 ? 'text-amber-400 font-medium' : 'text-thistle font-medium'}>{metrics.responseTime}ms</span></>}
       </div>
       {metrics.version && <p className="text-muted/60">v{metrics.version}</p>}
     </div>

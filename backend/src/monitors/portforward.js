@@ -6,9 +6,9 @@ function tcpConnect(host, port, timeout = 10000) {
   return new Promise((resolve, reject) => {
     const start  = Date.now();
     const socket = net.createConnection({ host, port, timeout });
-    socket.on('connect', () => { resolve(Date.now() - start); socket.destroy(); });
-    socket.on('timeout',  () => { socket.destroy(); reject(new Error('Timeout')); });
-    socket.on('error',    reject);
+    socket.on('connect', () => { resolve({ latency: Date.now() - start, errorType: null }); socket.destroy(); });
+    socket.on('timeout',  () => { socket.destroy(); reject({ message: 'Timeout', errorType: 'timeout' }); });
+    socket.on('error',    (e) => reject({ message: e.message, errorType: e.code === 'ECONNREFUSED' ? 'refused' : 'timeout' }));
   });
 }
 
@@ -21,13 +21,15 @@ async function check(config, lastState, lang = 'fr') {
     notifications: [{ ...L.missingConfig('Port Forwarding', 'Host and port required'), level: 'error', type: 'status_change' }],
   };
 
-  let latency = null;
-  let error   = null;
+  let latency   = null;
+  let errorType = null;
+  let errorMsg  = null;
 
   try {
-    latency = await tcpConnect(host, Number(port));
+    ({ latency, errorType } = await tcpConnect(host, Number(port)));
   } catch (e) {
-    error = e.message;
+    errorMsg  = e.message;
+    errorType = e.errorType || 'timeout';
   }
 
   const online    = latency !== null;
@@ -35,15 +37,15 @@ async function check(config, lastState, lang = 'fr') {
 
   const notifications = [];
   if (lastState !== null) {
-    if (!online && wasOnline)  notifications.push({ ...L.portForwardClosed(host, port), level: 'error',   type: 'status_change' });
-    if (online  && !wasOnline) notifications.push({ ...L.portForwardOpen(host, port, latency), level: 'success', type: 'status_change' });
+    if (!online && wasOnline)  notifications.push({ ...L.portForwardClosed(host, port, errorType), level: 'error',   type: 'status_change' });
+    if (online  && !wasOnline) notifications.push({ ...L.portForwardOpen(host, port, latency),     level: 'success', type: 'status_change' });
   }
 
   return {
     status:    online ? 'online' : 'offline',
-    lastError: error || null,
-    state:     { online, latency, host, port },
-    metrics:   { host, port, latency },
+    lastError: errorMsg || null,
+    state:     { online, latency, errorType, host, port },
+    metrics:   { host, port, latency, errorType },
     notifications,
   };
 }

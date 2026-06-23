@@ -577,6 +577,8 @@ export default {
         host: 'Hôte / IP externe',
         hostHint: 'IP publique ou domaine de votre box / serveur.',
         port: 'Port à vérifier',
+        errorRefused: 'Refusé',
+        errorTimeout: 'Timeout',
       },
       heartbeat: {
         expectedEvery: 'Attendu toutes les (minutes)',

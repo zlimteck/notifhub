@@ -145,7 +145,7 @@ module.exports = {
     }),
 
     // ── Port Forwarding ─────────────────────────────────────────────────────
-    portForwardClosed: (host, port) => ({ title: `${host}:${port} closed`, message: `Port ${port} is no longer reachable on ${host}.` }),
+    portForwardClosed: (host, port, errorType) => ({ title: `${host}:${port} closed`, message: `Port ${port} is no longer reachable on ${host}. ${errorType === 'refused' ? '(Connection refused — nothing listening)' : '(Timeout — port may be blocked)'}` }),
     portForwardOpen:   (host, port, latency) => ({ title: `${host}:${port} open`, message: `Port ${port} is reachable again on ${host} (${latency}ms).` }),
 
     // ── Portainer ───────────────────────────────────────────────────────────
@@ -376,7 +376,7 @@ module.exports = {
     }),
 
     // ── Port Forwarding ─────────────────────────────────────────────────────
-    portForwardClosed: (host, port) => ({ title: `${host}:${port} fermé`, message: `Le port ${port} n'est plus accessible sur ${host}.` }),
+    portForwardClosed: (host, port, errorType) => ({ title: `${host}:${port} fermé`, message: `Le port ${port} n'est plus accessible sur ${host}. ${errorType === 'refused' ? "(Connexion refusée — rien n'écoute)" : '(Timeout — port peut-être bloqué)'}` }),
     portForwardOpen:   (host, port, latency) => ({ title: `${host}:${port} ouvert`, message: `Le port ${port} est à nouveau accessible sur ${host} (${latency}ms).` }),
 
     // ── Portainer ───────────────────────────────────────────────────────────
