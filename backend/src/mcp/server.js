@@ -88,6 +88,79 @@ const TOOLS = [
       required: ['id'],
     },
   },
+  {
+    name: 'create_annotation',
+    description: 'Add a manual annotation (event marker) to a monitor\'s metric graph — e.g. "backup started", "deployed v2.1", "network issue".',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        monitor_id: { type: 'string', description: 'Monitor ID or exact name' },
+        label:      { type: 'string', description: 'Short annotation text (e.g. "Backup started")' },
+        ts:         { type: 'string', description: 'ISO 8601 timestamp — defaults to now if omitted' },
+      },
+      required: ['monitor_id', 'label'],
+    },
+  },
+  {
+    name: 'set_maintenance',
+    description: 'Put a monitor in maintenance mode for a given duration — suppresses alerts and incident creation during that window.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        monitor_id: { type: 'string', description: 'Monitor ID or exact name' },
+        minutes:    { type: 'number', description: 'Duration in minutes (e.g. 30, 60, 120)' },
+      },
+      required: ['monitor_id', 'minutes'],
+    },
+  },
+  {
+    name: 'cancel_maintenance',
+    description: 'Cancel an active maintenance window for a monitor and resume normal alerting immediately.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        monitor_id: { type: 'string', description: 'Monitor ID or exact name' },
+      },
+      required: ['monitor_id'],
+    },
+  },
+  {
+    name: 'resolve_incident',
+    description: 'Manually resolve an open incident and optionally add a postmortem summary.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        incident_id: { type: 'string', description: 'Incident ID (MongoDB ObjectId)' },
+        summary:     { type: 'string', description: 'Optional postmortem summary explaining what happened and how it was fixed' },
+      },
+      required: ['incident_id'],
+    },
+  },
+  {
+    name: 'create_changelog',
+    description: 'Add a changelog/deployment entry to a monitor — appears as a marker on the metric graph.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        monitor_id:  { type: 'string', description: 'Monitor ID or exact name' },
+        version:     { type: 'string', description: 'Version or release label (e.g. "v2.1.0", "hotfix-auth")' },
+        description: { type: 'string', description: 'Optional description of the change' },
+        deployed_at: { type: 'string', description: 'ISO 8601 timestamp — defaults to now if omitted' },
+      },
+      required: ['monitor_id', 'version'],
+    },
+  },
+  {
+    name: 'list_postmortems',
+    description: 'List incidents that have a postmortem written — with summary, root cause, impact, resolution, and lessons learned.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        monitor_id: { type: 'string', description: 'Filter by monitor ID or name' },
+        limit:      { type: 'number', description: 'Max number of results (default 10, max 50)' },
+      },
+    },
+  },
 ];
 
 function text(str) {
@@ -112,6 +185,7 @@ function formatMonitorSummary(m) {
     lastError:       m.lastError || null,
     maintenance:     m.maintenanceUntil && new Date(m.maintenanceUntil) > new Date() ? m.maintenanceUntil : null,
     dependsOn:       m.dependsOn?.length ? m.dependsOn : null,
+    confirmAfter:    m.confirmAfter ?? 1,
   };
 }
 
@@ -158,24 +232,17 @@ function createServer() {
     const monitors = await Monitor.find({}, 'name').sort({ position: 1, name: 1 }).lean();
     const names = monitors.map(m => m.name);
 
+    const monitorEnum = { enum: names, description: `Monitor name. Available: ${names.join(', ')}` };
     const tools = TOOLS.map(tool => {
-      if (['get_monitor', 'trigger_check', 'get_uptime'].includes(tool.name)) {
-        return {
-          ...tool,
-          inputSchema: {
-            ...tool.inputSchema,
-            properties: {
-              ...tool.inputSchema.properties,
-              id: {
-                ...tool.inputSchema.properties.id,
-                enum: names,
-                description: `Monitor name. Available: ${names.join(', ')}`,
-              },
-            },
-          },
-        };
+      const props = { ...tool.inputSchema.properties };
+      if (['get_monitor', 'trigger_check', 'get_uptime'].includes(tool.name) && props.id) {
+        props.id = { ...props.id, ...monitorEnum };
       }
-      return tool;
+      if (['create_annotation', 'set_maintenance', 'cancel_maintenance', 'create_changelog'].includes(tool.name) && props.monitor_id) {
+        props.monitor_id = { ...props.monitor_id, ...monitorEnum };
+      }
+      if (props === tool.inputSchema.properties) return tool;
+      return { ...tool, inputSchema: { ...tool.inputSchema, properties: props } };
     });
 
     return { tools };
@@ -261,8 +328,11 @@ function createServer() {
         const monitor = await resolveMonitor(id);
         if (!monitor) return text(`Monitor not found: ${id}`);
 
-        const snapshots = await MetricSnapshot.find({ monitorId: monitor._id })
-          .sort({ ts: -1 }).limit(20).lean();
+        const Changelog = require('../models/Changelog');
+        const [snapshots, changelog] = await Promise.all([
+          MetricSnapshot.find({ monitorId: monitor._id }).sort({ ts: -1 }).limit(20).lean(),
+          Changelog.find({ monitorId: monitor._id }).sort({ deployedAt: -1 }).limit(20).lean(),
+        ]);
 
         return text(JSON.stringify({
           ...formatMonitorSummary(monitor),
@@ -271,6 +341,9 @@ function createServer() {
           lastState:  monitor.lastState || null,
           recentSnapshots: snapshots.map(s => ({
             ts: s.ts, status: s.status, value: s.value, metrics: s.metrics || null,
+          })),
+          changelog: changelog.map(c => ({
+            version: c.version, description: c.description || null, deployedAt: c.deployedAt,
           })),
         }, null, 2));
       }
@@ -461,6 +534,106 @@ function createServer() {
         const { triggerNow } = require('../monitors/runner');
         await triggerNow(monitor._id);
         return text(`Check triggered for "${monitor.name}"`);
+      }
+
+      // ── create_annotation ──────────────────────────────────────────────────
+      if (name === 'create_annotation') {
+        const { monitor_id, label, ts } = args;
+        if (!monitor_id || !label) return text('Error: monitor_id and label are required');
+        const monitor = await resolveMonitor(monitor_id);
+        if (!monitor) return text(`Monitor not found: ${monitor_id}`);
+        const annotation = await Annotation.create({
+          monitorId: monitor._id,
+          label,
+          ts: ts ? new Date(ts) : new Date(),
+        });
+        return text(JSON.stringify({ ok: true, id: annotation._id, monitorName: monitor.name, label, ts: annotation.ts }, null, 2));
+      }
+
+      // ── set_maintenance ────────────────────────────────────────────────────
+      if (name === 'set_maintenance') {
+        const { monitor_id, minutes } = args;
+        if (!monitor_id || !minutes) return text('Error: monitor_id and minutes are required');
+        const monitor = await resolveMonitor(monitor_id);
+        if (!monitor) return text(`Monitor not found: ${monitor_id}`);
+        const MaintenanceWindow = require('../models/MaintenanceWindow');
+        const now   = new Date();
+        const until = new Date(Date.now() + Number(minutes) * 60 * 1000);
+        await Monitor.findByIdAndUpdate(monitor._id, { maintenanceStart: now, maintenanceUntil: until });
+        await MaintenanceWindow.create({ monitorId: monitor._id, startedAt: now });
+        return text(`Maintenance set for "${monitor.name}" until ${until.toISOString()} (${minutes} min)`);
+      }
+
+      // ── cancel_maintenance ─────────────────────────────────────────────────
+      if (name === 'cancel_maintenance') {
+        const { monitor_id } = args;
+        if (!monitor_id) return text('Error: monitor_id is required');
+        const monitor = await resolveMonitor(monitor_id);
+        if (!monitor) return text(`Monitor not found: ${monitor_id}`);
+        const MaintenanceWindow = require('../models/MaintenanceWindow');
+        const now = new Date();
+        await MaintenanceWindow.findOneAndUpdate(
+          { monitorId: monitor._id, endedAt: null },
+          { endedAt: now, canceledAt: now }
+        );
+        await Monitor.findByIdAndUpdate(monitor._id, { maintenanceStart: null, maintenanceUntil: null });
+        return text(`Maintenance cancelled for "${monitor.name}"`);
+      }
+
+      // ── resolve_incident ───────────────────────────────────────────────────
+      if (name === 'resolve_incident') {
+        const { incident_id, summary } = args;
+        if (!incident_id) return text('Error: incident_id is required');
+        const incident = await Incident.findById(incident_id);
+        if (!incident) return text(`Incident not found: ${incident_id}`);
+        if (incident.resolvedAt) return text(`Incident already resolved at ${incident.resolvedAt}`);
+        const now      = new Date();
+        const duration = now - new Date(incident.startedAt);
+        const update   = { resolvedAt: now, duration };
+        if (summary) update['postmortem.summary'] = summary;
+        await Incident.findByIdAndUpdate(incident_id, update);
+        return text(JSON.stringify({
+          ok: true,
+          monitorName: incident.monitorName,
+          duration: Math.round(duration / 60000) + ' min',
+          resolvedAt: now,
+        }, null, 2));
+      }
+
+      // ── create_changelog ───────────────────────────────────────────────────
+      if (name === 'create_changelog') {
+        const { monitor_id, version, description, deployed_at } = args;
+        if (!monitor_id || !version) return text('Error: monitor_id and version are required');
+        const monitor = await resolveMonitor(monitor_id);
+        if (!monitor) return text(`Monitor not found: ${monitor_id}`);
+        const Changelog = require('../models/Changelog');
+        const entry = await Changelog.create({
+          monitorId:   monitor._id,
+          version,
+          description: description || '',
+          deployedAt:  deployed_at ? new Date(deployed_at) : new Date(),
+        });
+        return text(JSON.stringify({ ok: true, id: entry._id, monitorName: monitor.name, version, deployedAt: entry.deployedAt }, null, 2));
+      }
+
+      // ── list_postmortems ───────────────────────────────────────────────────
+      if (name === 'list_postmortems') {
+        const filter = { 'postmortem.summary': { $exists: true, $ne: null, $ne: '' } };
+        if (args.monitor_id) {
+          const m = await resolveMonitor(args.monitor_id);
+          filter.monitorId = m ? m._id : args.monitor_id;
+        }
+        const limit = Math.min(Number(args.limit) || 10, 50);
+        const incidents = await Incident.find(filter).sort({ startedAt: -1 }).limit(limit).lean();
+        return text(JSON.stringify(incidents.map(i => ({
+          id:          i._id,
+          monitorName: i.monitorName || null,
+          severity:    i.severity || 'P3',
+          startedAt:   i.startedAt,
+          resolvedAt:  i.resolvedAt || null,
+          duration:    i.duration ? Math.round(i.duration / 60000) + ' min' : null,
+          postmortem:  i.postmortem,
+        })), null, 2));
       }
 
       return text(`Unknown tool: ${name}`);

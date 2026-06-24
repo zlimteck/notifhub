@@ -226,4 +226,28 @@ router.delete('/:id/maintenance', async (req, res) => {
   res.json({ ok: true });
 });
 
+// POST /api/monitors/:id/webhook-token — generate or regenerate webhook token
+router.post('/:id/webhook-token', async (req, res) => {
+  const { randomBytes } = require('crypto');
+  const token = randomBytes(32).toString('hex');
+  const monitor = await Monitor.findByIdAndUpdate(
+    req.params.id,
+    { webhookToken: token },
+    { new: true }
+  );
+  if (!monitor) return res.status(404).json({ error: 'Service introuvable' });
+  res.json({ webhookToken: token });
+});
+
+// DELETE /api/monitors/:id/webhook-token — revoke webhook token
+router.delete('/:id/webhook-token', async (req, res) => {
+  const monitor = await Monitor.findByIdAndUpdate(
+    req.params.id,
+    { webhookToken: null },
+    { new: true }
+  );
+  if (!monitor) return res.status(404).json({ error: 'Service introuvable' });
+  res.json({ ok: true });
+});
+
 module.exports = router;

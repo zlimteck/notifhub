@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { Copy, Check } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Copy, Check, RefreshCw } from 'lucide-react';
 import { useLang } from '../context/LangContext';
+import { settings as settingsApi } from '../api';
 
 const BASE = window.location.origin;
 
@@ -147,8 +148,26 @@ function CopyBtn({ text }) {
 }
 
 function TokenCard({ t }) {
-  const token = localStorage.getItem('nh_token') || '';
-  const preview = token ? `${token.slice(0, 20)}…` : '—';
+  const [apiKey, setApiKey] = useState('');
+  const [regenerating, setRegenerating] = useState(false);
+
+  useEffect(() => {
+    settingsApi.get().then(s => setApiKey(s.mcpApiKey || '')).catch(() => {});
+  }, []);
+
+  async function handleRegenerate() {
+    if (!confirm(t('api.auth.confirmRegenerate') || 'Régénérer la clé API ? Les intégrations existantes devront être mises à jour.')) return;
+    setRegenerating(true);
+    try {
+      const s = await settingsApi.regenerateMcpKey();
+      setApiKey(s.mcpApiKey || '');
+    } finally {
+      setRegenerating(false);
+    }
+  }
+
+  const preview = apiKey ? `${apiKey.slice(0, 16)}…` : '—';
+
   return (
     <div className="card space-y-3">
       <h2 className="text-sm font-semibold text-thistle">{t('api.auth.title')}</h2>
@@ -158,11 +177,16 @@ function TokenCard({ t }) {
       <div className="bg-granite-3/60 border border-border rounded-lg px-3 py-2 flex items-center gap-2 font-mono text-xs">
         <span className="text-muted shrink-0">Authorization:</span>
         <span className="text-frosted truncate flex-1">Bearer {preview}</span>
-        <CopyBtn text={`Bearer ${token}`} />
+        <CopyBtn text={`Bearer ${apiKey}`} />
       </div>
-      <p className="text-xs text-muted">
-        {t('api.auth.validity')} <span className="text-thistle">{t('api.auth.days')}</span>. {t('api.auth.renew')}
-      </p>
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted">{t('api.auth.permanent') || 'Clé permanente — valide jusqu\'à régénération.'}</p>
+        <button onClick={handleRegenerate} disabled={regenerating}
+          className="flex items-center gap-1.5 text-xs text-muted hover:text-thistle transition-colors disabled:opacity-50">
+          <RefreshCw size={11} className={regenerating ? 'animate-spin' : ''} />
+          {t('api.auth.regenerate') || 'Régénérer'}
+        </button>
+      </div>
     </div>
   );
 }

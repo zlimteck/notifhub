@@ -41,7 +41,7 @@
 - **Post-mortem reports** — attach a structured post-mortem (summary, root cause, impact, resolution, lessons learned) to any resolved incident
 - **SLA tracking** — set a target uptime % per monitor; met/breached indicator displayed on the Stats page; SLA uptime excludes maintenance periods
 - **Statistics** — 30-day global view: uptime per service with trend (raw + maintenance-adjusted), SLA status, incident count, MTTR, MTTD, severity breakdown, maintenance summary, notification log, incident heatmap by day/hour
-- **Prometheus metrics** — `GET /api/metrics` exposes all monitor metrics in Prometheus text format: `orveil_monitor_status`, `orveil_monitor_latency_ms`, `orveil_monitor_uptime_24h/7d/30d_pct`, `orveil_incidents_open_total`; secured by JWT or MCP API key
+- **Prometheus metrics** — `GET /api/metrics` exposes all monitor metrics in Prometheus text format: `orveil_monitor_status`, `orveil_monitor_latency_ms`, `orveil_monitor_uptime_24h/7d/30d_pct`, `orveil_incidents_open_total`; secured by API key or static `METRICS_TOKEN`
 - **Maintenance windows** — per-service maintenance mode, immediate or scheduled (date/time picker); presets 30 min to 8 h or custom duration; upcoming windows shown as a badge on the card; checks keep running during maintenance so the real status stays visible — alerts and incident creation are suppressed; full history with ended/canceled distinction; maintenance periods visible as interactive amber bands on the Timeline (hover for details, click to open); incidents that occurred during a maintenance are flagged in the Incidents page; SLA uptime is calculated excluding maintenance time; maintenance summary on the Stats page
 - **Adaptive polling** — when a service goes down, check interval drops automatically to 30 s (configurable) for near-instant recovery detection; reverts to the normal interval once the service is back up; Speedtest and Heartbeat monitors are excluded
 - **Notification cooldown** — configurable minimum delay (in minutes) between repeated down alerts for the same service; prevents alert storms during flapping; recovery notifications always pass through
@@ -49,7 +49,7 @@
 - **Backup & restore** — export all monitors and settings as JSON; import on another instance (Settings page)
 - **Status badges** — embeddable SVG badge per service (`/api/badge/:id`) with live status color; Markdown and HTML snippets available in the service detail modal
 - **Metric graphs** — sparkline graphs on dashboard cards and in service detail; smooth Bézier curves, incident overlays, user annotations, and per-monitor changelog markers (green vertical lines with version label and hover tooltip)
-- **Per-monitor changelog** — structured version/deployment log per service (`version` + `date` + `description`); entries appear as labeled markers on the metric graph; CRUD from the service detail modal
+- **Per-monitor changelog** — structured version/deployment log per service (`version` + `date` + `description`); entries appear as labeled markers on the metric graph; CRUD from the service detail modal; inbound webhook (`POST /api/webhook/changelog`) with per-monitor token for CI/CD integration (generate, regenerate, and revoke from the service edit modal)
 - **Apprise notifications** — Pushover, Telegram, Discord, Slack, email, and [100+ more](https://github.com/caronc/apprise/wiki)
 - **Weekly report** — optional weekly Apprise summary (services in error, average uptime)
 - **Manual notifications** — send a message to all channels directly from the UI
@@ -58,8 +58,8 @@
 - **Real-time toast notifications** — live in-app alerts when a monitor changes status (via SSE), with coloured toasts per status (error / warning / online)
 - **Auto / light / dark theme** — follows system preference, persisted per browser
 - **FR / EN interface** — language toggle synced to notification language (one setting controls both UI and alerts)
-- **REST API** — full API with Bearer token auth, documented in-app
-- **MCP server** — Model Context Protocol server exposing monitors, incidents, stats, annotations and uptime history to AI assistants (Claude Desktop, etc.) via Streamable HTTP and stdio transports
+- **REST API** — full API with Bearer API key auth (same key as MCP), documented in-app with copy button
+- **MCP server** — Model Context Protocol server exposing monitors, incidents, stats, annotations, changelogs and uptime history to AI assistants (Claude Desktop, etc.) via Streamable HTTP and stdio transports; includes write tools: create annotations, set/cancel maintenance, resolve incidents, add changelog entries
 - **Orveil AI** — built-in AI assistant (powered by Anthropic Claude) answering questions about your monitors, incidents, and SLA directly from the dashboard; API key stored encrypted in the database; model selectable from live Anthropic catalogue
 
 ## Stack
@@ -161,15 +161,29 @@ Orveil exposes a [Model Context Protocol](https://modelcontextprotocol.io) serve
 
 ### Tools available
 
+**Read**
+
 | Tool | Description |
 |------|-------------|
-| `list_monitors` | List all monitors with status, SLA target, category, maintenance state (filterable by status / category / enabled) |
-| `get_monitor` | Full details + metrics + recent snapshot history for a specific monitor |
-| `list_incidents` | Recent incidents with severity, duration, MTTR — filterable by open/resolved or monitor name |
+| `list_monitors` | List all monitors with status, SLA target, category, confirmAfter, maintenance state (filterable by status / category / enabled) |
+| `get_monitor` | Full details, metrics, recent snapshots, and changelog entries for a specific monitor |
+| `list_incidents` | Recent incidents with severity, duration, postmortem — filterable by open/resolved or monitor |
+| `get_stats` | Global counts per status |
 | `get_stats_detailed` | Full statistics: MTTR, MTTD, uptime per monitor (30d), SLA compliance, incidents/day, severity breakdown |
-| `list_annotations` | Manual event markers attached to monitors (with resolved monitor names) |
+| `list_annotations` | Manual event markers attached to monitors |
+| `list_postmortems` | Incidents with a written post-mortem (summary, root cause, impact, resolution, lessons) |
 | `get_uptime` | Daily uptime history per monitor (up to 90 days) |
+
+**Write**
+
+| Tool | Description |
+|------|-------------|
 | `trigger_check` | Trigger an immediate check for a monitor |
+| `create_annotation` | Add an event marker on a monitor's metric graph (e.g. "backup started", "deployed v2.1") |
+| `set_maintenance` | Put a monitor in maintenance mode for N minutes — suppresses alerts |
+| `cancel_maintenance` | Cancel an active maintenance window immediately |
+| `resolve_incident` | Manually close an open incident with an optional postmortem summary |
+| `create_changelog` | Add a deployment/version entry to a monitor's graph |
 
 Resources `orveil://monitors/{name}` are also available for direct URI access.
 

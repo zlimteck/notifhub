@@ -43,6 +43,8 @@ export const monitors = {
   test:       (id)           => api.post(`/monitors/${id}/test`).then(r => r.data),
   testConfig: (type, config) => api.post('/monitors/test', { type, config }).then(r => r.data),
   haEntities: (url, token, rejectUnauthorized) => api.post('/monitors/homeassistant/entities', { url, token, rejectUnauthorized }).then(r => r.data),
+  generateWebhookToken: (id) => api.post(`/monitors/${id}/webhook-token`).then(r => r.data),
+  revokeWebhookToken:   (id) => api.delete(`/monitors/${id}/webhook-token`).then(r => r.data),
 };
 
 export const logs = {

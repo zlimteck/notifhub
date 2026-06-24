@@ -31,6 +31,7 @@ const monitorSchema = new mongoose.Schema({
   consecutiveErrors: { type: Number, default: 0 },
   customIconUrl: { type: String, default: '' },
   pinned: { type: Boolean, default: false },
+  webhookToken: { type: String, default: null, sparse: true },
 }, { timestamps: true });
 
 // Encrypt sensitive config fields before any save

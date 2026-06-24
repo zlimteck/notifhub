@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Plus, Trash2, Wifi, RefreshCw, Image, ChevronDown } from 'lucide-react';
+import { X, Plus, Trash2, Wifi, RefreshCw, Image, ChevronDown, Webhook, Copy, Check, RotateCcw } from 'lucide-react';
 import { useLang } from '../context/LangContext';
 import { monitors as monitorsApi, settings as settingsApi } from '../api';
 import Portal from './Portal';
@@ -67,6 +67,15 @@ const TYPE_LABELS = {
   portforward:   'Port Forwarding',
   multistep:     'Multi-step HTTP',
 };
+
+function SectionDivider({ label }) {
+  return (
+    <div className="flex items-center gap-2 pt-1">
+      <span className="text-xs font-semibold text-muted/60 uppercase tracking-widest whitespace-nowrap">{label}</span>
+      <div className="flex-1 h-px bg-border" />
+    </div>
+  );
+}
 
 function Field({ label, value, onChange, placeholder, type = 'text', hint }) {
   return (
@@ -872,9 +881,120 @@ function ConfigFields({ type, config, onChange, t, proxies = [] }) {
   return null;
 }
 
+function WebhookSection({ monitor }) {
+  const [token, setToken] = React.useState(monitor?.webhookToken || null);
+  const [loading, setLoading] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+
+  const baseUrl = window.location.origin;
+  const webhookUrl = `${baseUrl}/api/webhook/changelog`;
+
+  async function generate() {
+    setLoading(true);
+    try {
+      const data = await monitorsApi.generateWebhookToken(monitor._id);
+      setToken(data.webhookToken);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function revoke() {
+    if (!confirm('Révoquer ce token ? Les intégrations qui l\'utilisent ne fonctionneront plus.')) return;
+    setLoading(true);
+    try {
+      await monitorsApi.revokeWebhookToken(monitor._id);
+      setToken(null);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function copyToken() {
+    navigator.clipboard.writeText(token);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  function copyCurl() {
+    const cmd = `curl -X POST ${webhookUrl} \\\n  -H "Content-Type: application/json" \\\n  -d '{"token":"${token}","version":"v1.0.0","description":"Deploy description"}'`;
+    navigator.clipboard.writeText(cmd);
+    setCopied('curl');
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <div className="border-t border-border pt-3 space-y-3">
+      <div className="flex items-center gap-2">
+        <Webhook size={13} className="text-periwinkle shrink-0" />
+        <p className="text-xs font-medium text-thistle">Webhook changelog</p>
+      </div>
+      <p className="text-xs text-muted">
+        Permet à tes pipelines CI/CD de créer automatiquement une entrée changelog sur ce monitor via une requête HTTP.
+      </p>
+
+      {!token ? (
+        <button type="button" onClick={generate} disabled={loading}
+          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-periwinkle/10 border border-periwinkle/30 text-periwinkle hover:bg-periwinkle/20 transition-colors disabled:opacity-50">
+          {loading ? <RefreshCw size={12} className="animate-spin" /> : <Webhook size={12} />}
+          Générer un token
+        </button>
+      ) : (
+        <div className="space-y-2">
+          {/* Token */}
+          <div>
+            <p className="text-xs text-muted mb-1">Token</p>
+            <div className="flex items-center gap-1.5">
+              <code className="flex-1 font-mono text-xs bg-granite-3 border border-border rounded-lg px-2.5 py-1.5 text-periwinkle truncate">
+                {token}
+              </code>
+              <button type="button" onClick={copyToken}
+                className="shrink-0 p-1.5 rounded-lg border border-border text-muted hover:text-thistle hover:border-periwinkle/50 transition-colors">
+                {copied === true ? <Check size={13} className="text-celadon" /> : <Copy size={13} />}
+              </button>
+              <button type="button" onClick={generate} disabled={loading} title="Régénérer"
+                className="shrink-0 p-1.5 rounded-lg border border-border text-muted hover:text-thistle hover:border-periwinkle/50 transition-colors disabled:opacity-50">
+                {loading ? <RefreshCw size={13} className="animate-spin" /> : <RotateCcw size={13} />}
+              </button>
+            </div>
+          </div>
+
+          {/* Exemple curl */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-xs text-muted">Exemple d'appel</p>
+              <button type="button" onClick={copyCurl}
+                className="flex items-center gap-1 text-xs text-muted hover:text-thistle transition-colors">
+                {copied === 'curl' ? <><Check size={11} className="text-celadon" /> Copié</> : <><Copy size={11} /> Copier</>}
+              </button>
+            </div>
+            <pre className="text-xs bg-granite-3 border border-border rounded-lg p-2.5 text-periwinkle/80 overflow-x-auto whitespace-pre-wrap break-all leading-relaxed">{`curl -X POST ${webhookUrl} \\
+  -H "Content-Type: application/json" \\
+  -d '{"token":"${token.slice(0, 8)}…","version":"v1.0.0","description":"Deploy"}'`}</pre>
+          </div>
+
+          {/* Revoke */}
+          <button type="button" onClick={revoke} disabled={loading}
+            className="text-xs text-red-400/70 hover:text-red-400 transition-colors">
+            Révoquer le token
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AdvancedSection({ form, setForm, allMonitors, monitor, lang, t, defaultOpen = false }) {
   const [open, setOpen] = React.useState(defaultOpen);
+  const [tab, setTab] = React.useState('general');
   const metrics = getMetrics(form.type, form.config);
+
+  const tabs = [
+    { id: 'general',       label: lang === 'fr' ? 'Général' : 'General' },
+    { id: 'monitoring',    label: 'Monitoring' },
+    { id: 'notifications', label: lang === 'fr' ? 'Notifs' : 'Notifs' },
+    ...(monitor ? [{ id: 'integrations', label: lang === 'fr' ? 'Intégrations' : 'Integrations' }] : []),
+  ];
 
   return (
     <div className="border-t border-border pt-3 space-y-2">
@@ -884,131 +1004,154 @@ function AdvancedSection({ form, setForm, allMonitors, monitor, lang, t, default
         {t('form.advanced') || 'Avancé'}
       </button>
       {open && (
-        <div className="space-y-4 pt-1">
-          <Field label={t('form.description')} value={form.description}
-            onChange={v => setForm(f => ({ ...f, description: v }))} placeholder="…" />
-
-          <Field label={t('form.serviceUrl')} value={form.serviceUrl}
-            onChange={v => setForm(f => ({ ...f, serviceUrl: v }))} placeholder="https://…" />
-
-          <div>
-            <label className="label">{t('form.customIcon')}</label>
-            <IconPicker value={form.customIconUrl} onChange={v => setForm(f => ({ ...f, customIconUrl: v }))} t={t} name={form.name} />
+        <div className="pt-1">
+          {/* Tab bar */}
+          <div className="flex gap-0.5 border-b border-border mb-4">
+            {tabs.map(t2 => (
+              <button key={t2.id} type="button" onClick={() => setTab(t2.id)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-t transition-colors whitespace-nowrap
+                  ${tab === t2.id
+                    ? 'text-thistle border-b-2 border-periwinkle -mb-px bg-granite-3/30'
+                    : 'text-muted hover:text-thistle'}`}>
+                {t2.label}
+              </button>
+            ))}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <UnitField label={t('form.checkInterval')} value={form.checkInterval} unit="min" min={1}
-              onChange={v => setForm(f => ({ ...f, checkInterval: v }))} />
-            <UnitField label={t('form.reportInterval')} value={form.reportInterval} unit="h" min={0}
-              onChange={v => setForm(f => ({ ...f, reportInterval: v }))} />
-          </div>
-
-          <div>
-            <label className="label">{t('form.confirmAfter')}</label>
-            <div className="flex">
-              <input className="input rounded-r-none flex-1 border-r-0" type="number" min="1" max="10" step="1"
-                placeholder="1" value={form.confirmAfter}
-                onChange={e => setForm(f => ({ ...f, confirmAfter: Math.max(1, parseInt(e.target.value) || 1) }))} />
-              <span className="flex items-center px-3 text-xs text-muted bg-surface border border-border rounded-r-lg shrink-0">
-                {t('form.confirmAfterHint')}
-              </span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={form.enabled}
-                onChange={e => setForm(f => ({ ...f, enabled: e.target.checked }))}
-                className="w-4 h-4 rounded accent-periwinkle" />
-              <span className="text-sm text-thistle">{t('form.enabled')}</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={form.showOnStatusPage !== false}
-                onChange={e => setForm(f => ({ ...f, showOnStatusPage: e.target.checked }))}
-                className="w-4 h-4 rounded accent-periwinkle" />
-              <span className="text-sm text-thistle">{t('form.showOnStatusPage')}</span>
-            </label>
-          </div>
-
-          <div>
-            <label className="label">{t('form.slaTarget')}</label>
-            <div className="flex">
-              <input className="input rounded-r-none flex-1 border-r-0" type="number" min="0" max="100" step="0.1"
-                placeholder={t('form.slaTargetHint')} value={form.slaTarget}
-                onChange={e => setForm(f => ({ ...f, slaTarget: e.target.value }))} />
-              <span className="flex items-center px-3 text-xs text-muted bg-surface border border-border rounded-r-lg shrink-0">%</span>
-            </div>
-          </div>
-
-          {metrics.length > 0 && (
-            <div>
-              <label className="label">{t('form.cardMetric')}</label>
-              <select className="select" value={form.cardMetric || ''}
-                onChange={e => setForm(f => ({ ...f, cardMetric: e.target.value || null }))}>
-                <option value="">{t('form.cardMetricDefault')}</option>
-                {metrics.map(m => (
-                  <option key={m.key} value={m.key}>{lang === 'fr' ? m.fr : m.en}</option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {/* Custom notification templates */}
-          <div className="border-t border-border pt-3 space-y-3">
-            <p className="text-xs font-medium text-thistle">{t('form.notifTemplates.title')}</p>
-            <div className="bg-granite-3/50 border border-border rounded-lg px-3 py-2 space-y-1">
-              <p className="text-xs text-muted">{t('form.notifTemplates.hint')}</p>
-              <div className="flex flex-wrap gap-1 pt-0.5">
-                {['{{name}}','{{status}}','{{duration}}','{{downAt}}','{{resolvedAt}}'].map(v => (
-                  <code key={v} className="text-xs bg-granite-3 border border-border rounded px-1.5 py-0.5 text-periwinkle">{v}</code>
-                ))}
+          {/* Général */}
+          {tab === 'general' && (
+            <div className="space-y-4">
+              <Field label={t('form.description')} value={form.description}
+                onChange={v => setForm(f => ({ ...f, description: v }))} placeholder="…" />
+              <Field label={t('form.serviceUrl')} value={form.serviceUrl}
+                onChange={v => setForm(f => ({ ...f, serviceUrl: v }))} placeholder="https://…" />
+              <div>
+                <label className="label">{t('form.customIcon')}</label>
+                <IconPicker value={form.customIconUrl} onChange={v => setForm(f => ({ ...f, customIconUrl: v }))} t={t} name={form.name} />
               </div>
-            </div>
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-red-400">{t('form.notifTemplates.down')}</p>
-              <Field label={t('form.notifTemplates.titleField')} value={form.config.downTitle || ''}
-                onChange={v => setForm(f => ({ ...f, config: { ...f.config, downTitle: v || undefined } }))}
-                placeholder={`${t('form.notifTemplates.titlePlaceholderDown')}`} />
-              <Field label={t('form.notifTemplates.messageField')} value={form.config.downMessage || ''}
-                onChange={v => setForm(f => ({ ...f, config: { ...f.config, downMessage: v || undefined } }))}
-                placeholder={`${t('form.notifTemplates.messagePlaceholderDown')}`} />
-            </div>
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-celadon">{t('form.notifTemplates.recovery')}</p>
-              <Field label={t('form.notifTemplates.titleField')} value={form.config.recoveryTitle || ''}
-                onChange={v => setForm(f => ({ ...f, config: { ...f.config, recoveryTitle: v || undefined } }))}
-                placeholder={`${t('form.notifTemplates.titlePlaceholderRecovery')}`} />
-              <Field label={t('form.notifTemplates.messageField')} value={form.config.recoveryMessage || ''}
-                onChange={v => setForm(f => ({ ...f, config: { ...f.config, recoveryMessage: v || undefined } }))}
-                placeholder={`${t('form.notifTemplates.messagePlaceholderRecovery')}`} />
-            </div>
-          </div>
-
-          {allMonitors.filter(m => m._id !== monitor?._id).length > 0 && (
-            <div>
-              <label className="label">{t('form.dependsOn')}</label>
-              <p className="text-xs text-muted mb-2">{t('form.dependsOnHint')}</p>
-              <div className="space-y-1 max-h-32 overflow-y-auto border border-border rounded-lg p-2">
-                {allMonitors.filter(m => m._id !== monitor?._id).sort((a, b) => a.name.localeCompare(b.name)).map(m => (
-                  <label key={m._id} className="flex items-center gap-2 cursor-pointer py-0.5">
-                    <input type="checkbox" className="w-3.5 h-3.5 rounded accent-periwinkle"
-                      checked={form.dependsOn.includes(String(m._id))}
-                      onChange={e => {
-                        const id = String(m._id);
-                        setForm(f => ({
-                          ...f,
-                          dependsOn: e.target.checked
-                            ? [...f.dependsOn, id]
-                            : f.dependsOn.filter(d => d !== id),
-                        }));
-                      }} />
-                    <span className="text-sm text-thistle">{m.name}</span>
-                    <span className="text-xs text-muted ml-auto">{m.type}</span>
-                  </label>
-                ))}
+              <div className="grid grid-cols-2 gap-3">
+                <UnitField label={t('form.checkInterval')} value={form.checkInterval} unit="min" min={1}
+                  onChange={v => setForm(f => ({ ...f, checkInterval: v }))} />
+                <UnitField label={t('form.reportInterval')} value={form.reportInterval} unit="h" min={0}
+                  onChange={v => setForm(f => ({ ...f, reportInterval: v }))} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={form.enabled}
+                    onChange={e => setForm(f => ({ ...f, enabled: e.target.checked }))}
+                    className="w-4 h-4 rounded accent-periwinkle" />
+                  <span className="text-sm text-thistle">{t('form.enabled')}</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={form.showOnStatusPage !== false}
+                    onChange={e => setForm(f => ({ ...f, showOnStatusPage: e.target.checked }))}
+                    className="w-4 h-4 rounded accent-periwinkle" />
+                  <span className="text-sm text-thistle">{t('form.showOnStatusPage')}</span>
+                </label>
               </div>
             </div>
           )}
+
+          {/* Monitoring */}
+          {tab === 'monitoring' && (
+            <div className="space-y-4">
+              <div>
+                <label className="label">{t('form.confirmAfter')}</label>
+                <div className="flex">
+                  <input className="input rounded-r-none flex-1 border-r-0" type="number" min="1" max="10" step="1"
+                    placeholder="1" value={form.confirmAfter}
+                    onChange={e => setForm(f => ({ ...f, confirmAfter: Math.max(1, parseInt(e.target.value) || 1) }))} />
+                  <span className="flex items-center px-3 text-xs text-muted bg-surface border border-border rounded-r-lg shrink-0">
+                    {t('form.confirmAfterHint')}
+                  </span>
+                </div>
+              </div>
+              <div>
+                <label className="label">{t('form.slaTarget')}</label>
+                <div className="flex">
+                  <input className="input rounded-r-none flex-1 border-r-0" type="number" min="0" max="100" step="0.1"
+                    placeholder={t('form.slaTargetHint')} value={form.slaTarget}
+                    onChange={e => setForm(f => ({ ...f, slaTarget: e.target.value }))} />
+                  <span className="flex items-center px-3 text-xs text-muted bg-surface border border-border rounded-r-lg shrink-0">%</span>
+                </div>
+              </div>
+              {metrics.length > 0 && (
+                <div>
+                  <label className="label">{t('form.cardMetric')}</label>
+                  <select className="select" value={form.cardMetric || ''}
+                    onChange={e => setForm(f => ({ ...f, cardMetric: e.target.value || null }))}>
+                    <option value="">{t('form.cardMetricDefault')}</option>
+                    {metrics.map(m => (
+                      <option key={m.key} value={m.key}>{lang === 'fr' ? m.fr : m.en}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {allMonitors.filter(m => m._id !== monitor?._id).length > 0 && (
+                <div>
+                  <label className="label">{t('form.dependsOn')}</label>
+                  <p className="text-xs text-muted mb-2">{t('form.dependsOnHint')}</p>
+                  <div className="space-y-1 max-h-40 overflow-y-auto border border-border rounded-lg p-2">
+                    {allMonitors.filter(m => m._id !== monitor?._id).sort((a, b) => a.name.localeCompare(b.name)).map(m => (
+                      <label key={m._id} className="flex items-center gap-2 cursor-pointer py-0.5">
+                        <input type="checkbox" className="w-3.5 h-3.5 rounded accent-periwinkle"
+                          checked={form.dependsOn.includes(String(m._id))}
+                          onChange={e => {
+                            const id = String(m._id);
+                            setForm(f => ({
+                              ...f,
+                              dependsOn: e.target.checked
+                                ? [...f.dependsOn, id]
+                                : f.dependsOn.filter(d => d !== id),
+                            }));
+                          }} />
+                        <span className="text-sm text-thistle">{m.name}</span>
+                        <span className="text-xs text-muted ml-auto">{m.type}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Notifications */}
+          {tab === 'notifications' && (
+            <div className="space-y-3">
+              <div className="bg-granite-3/50 border border-border rounded-lg px-3 py-2 space-y-1">
+                <p className="text-xs text-muted">{t('form.notifTemplates.hint')}</p>
+                <div className="flex flex-wrap gap-1 pt-0.5">
+                  {['{{name}}','{{status}}','{{duration}}','{{downAt}}','{{resolvedAt}}'].map(v => (
+                    <code key={v} className="text-xs bg-granite-3 border border-border rounded px-1.5 py-0.5 text-periwinkle">{v}</code>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-red-400">{t('form.notifTemplates.down')}</p>
+                <Field label={t('form.notifTemplates.titleField')} value={form.config.downTitle || ''}
+                  onChange={v => setForm(f => ({ ...f, config: { ...f.config, downTitle: v || undefined } }))}
+                  placeholder={t('form.notifTemplates.titlePlaceholderDown')} />
+                <Field label={t('form.notifTemplates.messageField')} value={form.config.downMessage || ''}
+                  onChange={v => setForm(f => ({ ...f, config: { ...f.config, downMessage: v || undefined } }))}
+                  placeholder={t('form.notifTemplates.messagePlaceholderDown')} />
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-celadon">{t('form.notifTemplates.recovery')}</p>
+                <Field label={t('form.notifTemplates.titleField')} value={form.config.recoveryTitle || ''}
+                  onChange={v => setForm(f => ({ ...f, config: { ...f.config, recoveryTitle: v || undefined } }))}
+                  placeholder={t('form.notifTemplates.titlePlaceholderRecovery')} />
+                <Field label={t('form.notifTemplates.messageField')} value={form.config.recoveryMessage || ''}
+                  onChange={v => setForm(f => ({ ...f, config: { ...f.config, recoveryMessage: v || undefined } }))}
+                  placeholder={t('form.notifTemplates.messagePlaceholderRecovery')} />
+              </div>
+            </div>
+          )}
+
+          {/* Intégrations */}
+          {tab === 'integrations' && monitor && (
+            <WebhookSection monitor={monitor} />
+          )}
+
         </div>
       )}
     </div>
@@ -1023,6 +1166,7 @@ export default function ServiceModal({ monitor, onClose, onSave }) {
   const originalFormRef = useRef(null);
   const [allMonitors, setAllMonitors] = useState([]);
   const [savedProxies, setSavedProxies] = useState([]);
+  const [tab, setTab] = useState('config');
 
   useEffect(() => {
     monitorsApi.list().then(setAllMonitors).catch(() => {});
@@ -1114,54 +1258,220 @@ export default function ServiceModal({ monitor, onClose, onSave }) {
     onClose();
   }
 
+  const modalTabs = [
+    { id: 'config',        label: 'Config' },
+    { id: 'general',       label: lang === 'fr' ? 'Général' : 'General' },
+    { id: 'monitoring',    label: 'Monitoring' },
+    { id: 'notifications', label: lang === 'fr' ? 'Notifs' : 'Notifs' },
+    ...(monitor ? [{ id: 'integrations', label: lang === 'fr' ? 'Intégrations' : 'Integrations' }] : []),
+  ];
+
+  const metrics = getMetrics(form.type, form.config);
+
   return (
     <Portal><div className="modal-backdrop fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm">
-      <div className="modal-panel bg-card border border-border w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl max-h-[92dvh] overflow-y-auto shadow-2xl">
-        <div className="sm:hidden flex justify-center pt-3 pb-1">
+      <div className="modal-panel bg-card border border-border w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl h-[92dvh] sm:h-[600px] flex flex-col shadow-2xl">
+        <div className="sm:hidden flex justify-center pt-3 pb-1 shrink-0">
           <div className="w-10 h-1 bg-slate-600 rounded-full" />
         </div>
 
-        <div className="flex items-center justify-between px-5 py-3 border-b border-border">
-          <h2 className="font-semibold text-thistle">{monitor ? t('form.titleEdit') : t('form.titleNew')}</h2>
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-border shrink-0">
+          <div className="flex items-center gap-2">
+            <ServiceIcon type={form.type} size={16} customIconUrl={form.customIconUrl} />
+            <h2 className="font-semibold text-thistle">{monitor ? (form.name || t('form.titleEdit')) : t('form.titleNew')}</h2>
+          </div>
           <button onClick={handleClose} className="btn-ghost p-1.5 rounded-lg"><X size={16} /></button>
         </div>
 
-        <form onSubmit={e => { e.preventDefault(); savedRef.current = true; onSave({ ...form, slaTarget: form.slaTarget !== '' ? parseFloat(form.slaTarget) : null }); }} className="p-5 space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <Field label={t('form.name')} value={form.name}
-              onChange={v => setForm(f => ({ ...f, name: v }))} placeholder={t('form.namePlaceholder')} />
-            <Field label={t('form.category')} value={form.category}
-              onChange={v => setForm(f => ({ ...f, category: v }))} placeholder={t('form.categoryPlaceholder')} />
-          </div>
+        {/* Tab bar */}
+        <div className="flex gap-0.5 px-5 border-b border-border shrink-0 overflow-x-auto">
+          {modalTabs.map(mt => (
+            <button key={mt.id} type="button" onClick={() => setTab(mt.id)}
+              className={`px-3 py-2 text-xs font-medium whitespace-nowrap transition-colors
+                ${tab === mt.id
+                  ? 'text-thistle border-b-2 border-periwinkle -mb-px'
+                  : 'text-muted hover:text-thistle'}`}>
+              {mt.label}
+            </button>
+          ))}
+        </div>
 
-          <div>
-            <label className="label">{t('form.type')}</label>
-            <div className="flex items-stretch gap-2">
-              <div className="flex-shrink-0 flex items-center justify-center px-3 py-2 rounded-lg border border-border bg-surface">
-                <ServiceIcon key={form.type} type={form.type} size={18} customIconUrl={form.customIconUrl} />
+        <form onSubmit={e => { e.preventDefault(); savedRef.current = true; onSave({ ...form, slaTarget: form.slaTarget !== '' ? parseFloat(form.slaTarget) : null }); }}
+          className="flex flex-col flex-1 min-h-0">
+
+          {/* Tab content */}
+          <div className="flex-1 overflow-y-auto p-5 space-y-4">
+
+            {/* Config */}
+            {tab === 'config' && (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label={t('form.name')} value={form.name}
+                    onChange={v => setForm(f => ({ ...f, name: v }))} placeholder={t('form.namePlaceholder')} />
+                  <Field label={t('form.category')} value={form.category}
+                    onChange={v => setForm(f => ({ ...f, category: v }))} placeholder={t('form.categoryPlaceholder')} />
+                </div>
+                <div>
+                  <label className="label">{t('form.type')}</label>
+                  <div className="flex items-stretch gap-2">
+                    <div className="flex-shrink-0 flex items-center justify-center px-3 py-2 rounded-lg border border-border bg-surface">
+                      <ServiceIcon key={form.type} type={form.type} size={18} customIconUrl={form.customIconUrl} />
+                    </div>
+                    <select className="input flex-1" value={form.type} disabled={!!monitor}
+                      onChange={e => !monitor && handleTypeChange(e.target.value)}>
+                      {Object.entries(TYPE_LABELS).sort((a, b) => a[1].localeCompare(b[1])).map(([v, l]) => (
+                        <option key={v} value={v}>{l}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <Field label={t('form.serviceUrl')} value={form.serviceUrl}
+                  onChange={v => setForm(f => ({ ...f, serviceUrl: v }))} placeholder="https://…" />
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={form.enabled}
+                      onChange={e => setForm(f => ({ ...f, enabled: e.target.checked }))}
+                      className="w-4 h-4 rounded accent-periwinkle" />
+                    <span className="text-sm text-thistle">{t('form.enabled')}</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={form.showOnStatusPage !== false}
+                      onChange={e => setForm(f => ({ ...f, showOnStatusPage: e.target.checked }))}
+                      className="w-4 h-4 rounded accent-periwinkle" />
+                    <span className="text-sm text-thistle">{t('form.showOnStatusPage')}</span>
+                  </label>
+                </div>
+                <div className="border-t border-border pt-3 space-y-3">
+                  <p className="text-xs font-medium text-muted uppercase tracking-wider">{t('form.config')} {TYPE_LABELS[form.type]}</p>
+                  <ConfigFields type={form.type} config={form.config}
+                    onChange={config => setForm(f => ({ ...f, config }))} t={t} proxies={savedProxies} />
+                </div>
+              </>
+            )}
+
+            {/* Général */}
+            {tab === 'general' && (
+              <div className="space-y-4">
+                <Field label={t('form.description')} value={form.description}
+                  onChange={v => setForm(f => ({ ...f, description: v }))} placeholder="…" />
+                <div>
+                  <label className="label">{t('form.customIcon')}</label>
+                  <IconPicker value={form.customIconUrl} onChange={v => setForm(f => ({ ...f, customIconUrl: v }))} t={t} name={form.name} />
+                </div>
               </div>
-              <select
-                className="input flex-1"
-                value={form.type}
-                disabled={!!monitor}
-                onChange={e => !monitor && handleTypeChange(e.target.value)}
-              >
-                {Object.entries(TYPE_LABELS).sort((a, b) => a[1].localeCompare(b[1])).map(([v, l]) => (
-                  <option key={v} value={v}>{l}</option>
-                ))}
-              </select>
-            </div>
+            )}
+
+            {/* Monitoring */}
+            {tab === 'monitoring' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <UnitField label={t('form.checkInterval')} value={form.checkInterval} unit="min" min={1}
+                    onChange={v => setForm(f => ({ ...f, checkInterval: v }))} />
+                  <UnitField label={t('form.reportInterval')} value={form.reportInterval} unit="h" min={0}
+                    onChange={v => setForm(f => ({ ...f, reportInterval: v }))} />
+                </div>
+                <div>
+                  <label className="label">{t('form.confirmAfter')}</label>
+                  <div className="flex">
+                    <input className="input rounded-r-none flex-1 border-r-0" type="number" min="1" max="10" step="1"
+                      placeholder="1" value={form.confirmAfter}
+                      onChange={e => setForm(f => ({ ...f, confirmAfter: Math.max(1, parseInt(e.target.value) || 1) }))} />
+                    <span className="flex items-center px-3 text-xs text-muted bg-surface border border-border rounded-r-lg shrink-0">
+                      {t('form.confirmAfterHint')}
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  <label className="label">{t('form.slaTarget')}</label>
+                  <div className="flex">
+                    <input className="input rounded-r-none flex-1 border-r-0" type="number" min="0" max="100" step="0.1"
+                      placeholder={t('form.slaTargetHint')} value={form.slaTarget}
+                      onChange={e => setForm(f => ({ ...f, slaTarget: e.target.value }))} />
+                    <span className="flex items-center px-3 text-xs text-muted bg-surface border border-border rounded-r-lg shrink-0">%</span>
+                  </div>
+                </div>
+                {metrics.length > 0 && (
+                  <div>
+                    <label className="label">{t('form.cardMetric')}</label>
+                    <select className="select" value={form.cardMetric || ''}
+                      onChange={e => setForm(f => ({ ...f, cardMetric: e.target.value || null }))}>
+                      <option value="">{t('form.cardMetricDefault')}</option>
+                      {metrics.map(m => (
+                        <option key={m.key} value={m.key}>{lang === 'fr' ? m.fr : m.en}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                {allMonitors.filter(m => m._id !== monitor?._id).length > 0 && (
+                  <div>
+                    <label className="label">{t('form.dependsOn')}</label>
+                    <p className="text-xs text-muted mb-2">{t('form.dependsOnHint')}</p>
+                    <div className="space-y-1 max-h-48 overflow-y-auto border border-border rounded-lg p-2">
+                      {allMonitors.filter(m => m._id !== monitor?._id).sort((a, b) => a.name.localeCompare(b.name)).map(m => (
+                        <label key={m._id} className="flex items-center gap-2 cursor-pointer py-0.5">
+                          <input type="checkbox" className="w-3.5 h-3.5 rounded accent-periwinkle"
+                            checked={form.dependsOn.includes(String(m._id))}
+                            onChange={e => {
+                              const id = String(m._id);
+                              setForm(f => ({
+                                ...f,
+                                dependsOn: e.target.checked
+                                  ? [...f.dependsOn, id]
+                                  : f.dependsOn.filter(d => d !== id),
+                              }));
+                            }} />
+                          <span className="text-sm text-thistle">{m.name}</span>
+                          <span className="text-xs text-muted ml-auto">{m.type}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Notifications */}
+            {tab === 'notifications' && (
+              <div className="space-y-3">
+                <div className="bg-granite-3/50 border border-border rounded-lg px-3 py-2 space-y-1">
+                  <p className="text-xs text-muted">{t('form.notifTemplates.hint')}</p>
+                  <div className="flex flex-wrap gap-1 pt-0.5">
+                    {['{{name}}','{{status}}','{{duration}}','{{downAt}}','{{resolvedAt}}'].map(v => (
+                      <code key={v} className="text-xs bg-granite-3 border border-border rounded px-1.5 py-0.5 text-periwinkle">{v}</code>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-red-400">{t('form.notifTemplates.down')}</p>
+                  <Field label={t('form.notifTemplates.titleField')} value={form.config.downTitle || ''}
+                    onChange={v => setForm(f => ({ ...f, config: { ...f.config, downTitle: v || undefined } }))}
+                    placeholder={t('form.notifTemplates.titlePlaceholderDown')} />
+                  <Field label={t('form.notifTemplates.messageField')} value={form.config.downMessage || ''}
+                    onChange={v => setForm(f => ({ ...f, config: { ...f.config, downMessage: v || undefined } }))}
+                    placeholder={t('form.notifTemplates.messagePlaceholderDown')} />
+                </div>
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-celadon">{t('form.notifTemplates.recovery')}</p>
+                  <Field label={t('form.notifTemplates.titleField')} value={form.config.recoveryTitle || ''}
+                    onChange={v => setForm(f => ({ ...f, config: { ...f.config, recoveryTitle: v || undefined } }))}
+                    placeholder={t('form.notifTemplates.titlePlaceholderRecovery')} />
+                  <Field label={t('form.notifTemplates.messageField')} value={form.config.recoveryMessage || ''}
+                    onChange={v => setForm(f => ({ ...f, config: { ...f.config, recoveryMessage: v || undefined } }))}
+                    placeholder={t('form.notifTemplates.messagePlaceholderRecovery')} />
+                </div>
+              </div>
+            )}
+
+            {/* Intégrations */}
+            {tab === 'integrations' && monitor && (
+              <WebhookSection monitor={monitor} />
+            )}
+
           </div>
 
-          <div className="border-t border-border pt-4 space-y-3">
-            <p className="text-xs font-medium text-muted uppercase tracking-wider">{t('form.config')} {TYPE_LABELS[form.type]}</p>
-            <ConfigFields type={form.type} config={form.config}
-              onChange={config => setForm(f => ({ ...f, config }))} t={t} proxies={savedProxies} />
-          </div>
-
-          <AdvancedSection form={form} setForm={setForm} allMonitors={allMonitors} monitor={monitor} lang={lang} t={t} defaultOpen={advancedDefaultOpen} />
-
-          <div className="flex justify-between items-start gap-3 pt-2 border-t border-border">
+          {/* Footer — always visible */}
+          <div className="flex justify-between items-start gap-3 px-5 py-4 border-t border-border shrink-0">
             <div>
               <button type="button" onClick={handleTest} disabled={testing}
                 className="btn-ghost border border-border px-3 py-2 rounded-lg text-sm flex items-center gap-2">

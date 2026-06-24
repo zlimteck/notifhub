@@ -7,8 +7,18 @@ const runner = require('./monitors/runner');
 const { authMiddleware } = require('./middleware/auth');
 
 const app = express();
-app.use(cors());
-app.use(express.json());
+
+// Security headers
+app.use(require('helmet')({ contentSecurityPolicy: false }));
+
+// CORS — open in dev, restricted to FRONTEND_URL in production
+const corsOrigin = process.env.NODE_ENV === 'production' && process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL
+  : true;
+app.use(cors({ origin: corsOrigin, credentials: true }));
+
+// Body size limit
+app.use(express.json({ limit: '1mb' }));
 
 // Frontend static files (before auth middleware)
 const publicDir = path.join(__dirname, '../public');
@@ -21,6 +31,7 @@ app.use('/api/events', require('./routes/sse'));
 app.use('/api/public', require('./routes/public'));
 app.use('/api/badge',  require('./routes/badge'));
 app.use('/api/mcp',    require('./routes/mcp'));
+app.use('/api/webhook', require('./routes/webhook'));
 console.log('[MCP] Serveur MCP démarré sur /api/mcp (Streamable HTTP)');
 app.get('/api/health', (req, res) => res.json({ ok: true, ts: new Date() }));
 
