@@ -30,12 +30,13 @@
 - **24 monitor types** — HTTP/HTTPS, Multi-step HTTP, Ping/TCP, Port Forwarding, SSH, DNS, MySQL, Redis, Proxmox, Cloudflare, AdGuard DNS, AdGuard Home, Home Assistant, Portainer, Docker, Syncthing, Immich, HostMyServers, Ultra.cc, Heartbeat, Unraid, Speedtest Tracker, Jellyfin, Ollama
 - **Multi-step HTTP** — chain multiple HTTP requests with variable extraction (JSONPath or response headers) and interpolation between steps; full step-by-step failure reporting
 - **Public status page** — shareable `/status` page (no login required) with uptime bars, open incidents, and 90-day history per service; toggle visibility per service
+- **Global search** — `Cmd+K` / `Ctrl+K` modal searches across monitors, incidents, annotations, and post-mortems simultaneously; results grouped by type with keyboard navigation; click any result to navigate directly to the relevant page or open the service detail
 - **Search & sort** — filter cards by name, sort by status / name / manual order
 - **Drag & drop reordering** — manually reorder cards in grid view
 - **Category grouping** — assign a category to each service to group cards on the dashboard
 - **Pin monitors** — pin any monitor to always show it in a dedicated "Pinned" group at the top of the dashboard, above all categories
 - **Bulk actions** — select multiple monitors with checkboxes and pin, enable, disable, or delete them in one click; floating action bar slides up when a selection is active
-- **Incident tracking** — automatic incident open/close with duration history; P1–P4 severity (auto-assigned, manually overridable); failure reason displayed inline; incidents grouped by date
+- **Incident tracking** — automatic incident open/close with duration history; P1–P4 severity (auto-assigned, manually overridable); failure reason displayed inline; incidents grouped by date; configurable confirm-after threshold (require N consecutive errors before opening an incident, default 1 = immediate)
 - **War room** — dedicated full-screen view of all active incidents sorted by severity, with auto-refresh every 30 s
 - **Post-mortem reports** — attach a structured post-mortem (summary, root cause, impact, resolution, lessons learned) to any resolved incident
 - **SLA tracking** — set a target uptime % per monitor; met/breached indicator displayed on the Stats page; SLA uptime excludes maintenance periods
@@ -47,7 +48,8 @@
 - **Monitor dependencies** — link a monitor to a parent; down alerts are suppressed when the parent is also down
 - **Backup & restore** — export all monitors and settings as JSON; import on another instance (Settings page)
 - **Status badges** — embeddable SVG badge per service (`/api/badge/:id`) with live status color; Markdown and HTML snippets available in the service detail modal
-- **Metric graphs** — sparkline graphs on dashboard cards and in service detail; smooth Bézier curves, incident overlays, and user annotations pinned to the timeline
+- **Metric graphs** — sparkline graphs on dashboard cards and in service detail; smooth Bézier curves, incident overlays, user annotations, and per-monitor changelog markers (green vertical lines with version label and hover tooltip)
+- **Per-monitor changelog** — structured version/deployment log per service (`version` + `date` + `description`); entries appear as labeled markers on the metric graph; CRUD from the service detail modal
 - **Apprise notifications** — Pushover, Telegram, Discord, Slack, email, and [100+ more](https://github.com/caronc/apprise/wiki)
 - **Weekly report** — optional weekly Apprise summary (services in error, average uptime)
 - **Manual notifications** — send a message to all channels directly from the UI
