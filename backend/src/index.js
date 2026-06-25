@@ -19,7 +19,7 @@ app.use(require('helmet')({
       scriptSrc:               ["'self'"],
       styleSrc:                ["'self'", "'unsafe-inline'"],
       imgSrc:                  ["'self'", "data:", "http:", "https:"],
-      connectSrc:              ["'self'"],
+      connectSrc:              ["'self'", "https://api.github.com"],
       frameSrc:                ["'none'"],
       objectSrc:               ["'none'"],
     },

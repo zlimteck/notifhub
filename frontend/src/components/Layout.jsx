@@ -182,7 +182,7 @@ export default function Layout() {
 
       {/* Mobile Drawer */}
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border flex flex-col transition-transform duration-200 md:hidden ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="flex items-start border-b border-border">
+        <div className="flex items-start border-b border-border" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
           <div className="flex-1"><SidebarHeader /></div>
           <button onClick={() => setSidebarOpen(false)} className="btn-ghost p-1.5 rounded-lg mt-3 mr-3 shrink-0">
             <X size={18} />
