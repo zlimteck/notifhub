@@ -49,6 +49,17 @@
 - **Proxy library** — save multiple named proxies (HTTP, HTTPS, SOCKS5, SSH tunnel); activate/deactivate any proxy as the global default; assign a specific proxy per monitor; passwords and private keys encrypted at rest
 - **Backup & restore** — export all monitors and settings as JSON; import on another instance (Settings page)
 
+## Security
+
+- **httpOnly session cookie** — JWT stored in an httpOnly, SameSite=Strict cookie; never exposed to JavaScript
+- **Token revocation** — logout blacklists the JWT by JTI in MongoDB (TTL-indexed); reusing a logged-out token returns 401 immediately
+- **Content Security Policy** — strict CSP via helmet (`script-src 'self'`, no `unsafe-eval`, no `unsafe-inline` scripts)
+- **Rate limiting** — login (10 req/15 min), AI chat (20 req/min), settings writes (30 req/min), manual notifications (10 req/min)
+- **Docker socket proxy** — the app never mounts the Docker socket directly; a read-only socket proxy exposes only container list and info endpoints
+- **Credential encryption** — all sensitive monitor fields (API keys, tokens, passwords, private keys) encrypted at rest with AES-256-GCM when `ENCRYPTION_KEY` is set
+- **Input validation** — monitor fields whitelisted on create/update; URL protocol validated (`http:`/`https:` only); AI messages capped at 50 messages × 8000 chars
+- **Secure defaults** — JWT_SECRET required at startup (crashes if absent); admin password randomly generated on first start if not set; Apprise and Prometheus bound to localhost only
+
 ## AI & UX
 
 - **Orveil AI** — built-in AI assistant (powered by Anthropic Claude) answering questions about your monitors, incidents, and SLA directly from the dashboard; API key stored encrypted in the database; model selectable from live Anthropic catalogue

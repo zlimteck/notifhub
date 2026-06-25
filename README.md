@@ -105,7 +105,13 @@ networks:
 | App (frontend + API) | http://localhost:3050 |
 | Apprise API | http://localhost:8008 |
 
-Default credentials: `admin` / `orveil`
+If `ADMIN_PASSWORD` is not set, a random password is generated on first start and printed once in the container logs:
+
+```bash
+docker logs orveil
+```
+
+Set `ADMIN_PASSWORD` in your `.env` to control the initial password.
 
 ---
 
