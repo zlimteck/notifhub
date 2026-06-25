@@ -45,7 +45,7 @@ function UserFooter({ onLogout }) {
   const { user } = useAuth();
   const initial = (user?.username?.[0] ?? '?').toUpperCase();
   return (
-    <div className="p-3 border-t border-border flex items-center gap-2.5">
+    <div className="p-3 border-t border-border flex items-center gap-2.5 safe-bottom">
       <div className="w-7 h-7 rounded-full bg-periwinkle/20 border border-periwinkle/30 flex items-center justify-center shrink-0">
         <span className="text-xs font-semibold text-periwinkle">{initial}</span>
       </div>
@@ -204,7 +204,7 @@ export default function Layout() {
       </aside>
 
       {/* Mobile top bar — fixed so the virtual keyboard can't push it off screen */}
-      <header className="md:hidden fixed top-0 inset-x-0 z-30 flex items-center justify-between px-4 h-14 bg-card border-b border-border">
+      <header className="md:hidden fixed top-0 inset-x-0 z-30 flex items-center justify-between px-4 h-14 bg-card border-b border-border safe-top" style={{ height: 'calc(3.5rem + env(safe-area-inset-top))' }}>
         <button onClick={() => setSidebarOpen(true)} className="btn-ghost p-1.5 rounded-lg">
           <Menu size={20} />
         </button>
@@ -220,9 +220,9 @@ export default function Layout() {
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Spacer that matches the fixed header height on mobile */}
-        <div className="md:hidden h-14 shrink-0" />
+        <div className="md:hidden shrink-0" style={{ height: 'calc(3.5rem + env(safe-area-inset-top))' }} />
 
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-auto safe-bottom">
           <div key={location.pathname} className="animate-fade-in">
             <Outlet />
           </div>
