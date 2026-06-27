@@ -61,7 +61,6 @@ function UptimeRow({ monitor, lang }) {
       <span className={`text-xs font-mono w-10 text-right shrink-0 ${textColor}`}>
         {display != null ? `${display}%` : '—'}
       </span>
-      <TrendBadge trend={monitor.trend} />
       <SlaBadge slaMet={monitor.slaMet} slaTarget={monitor.slaTarget} />
     </div>
   );
