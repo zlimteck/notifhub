@@ -187,7 +187,7 @@ export default function ServiceDetail({ monitor, onClose }) {
         const pts = points.map(p => ({ ...p, value: p.metrics?.[metric.key] ?? null }));
         const vals = pts.filter(p => p.value != null);
         if (vals.length < 2) return null;
-        return { key: metric.key, label: lang === 'fr' ? metric.fr : metric.en, pts };
+        return { key: metric.key, label: lang === 'fr' ? metric.fr : metric.en, unit: metric.unit, pts };
       }).filter(Boolean);
       if (list.length > 0) return list;
     }
@@ -250,6 +250,35 @@ export default function ServiceDetail({ monitor, onClose }) {
         <div className="p-5 space-y-5 flex-1 overflow-y-auto">
           {tab === 'metrics' && (
             <>
+              {/* Live snapshot chips */}
+              {monitor.metrics && (() => {
+                const m = monitor.metrics;
+                const chips = [];
+                if (monitor.type === 'http') {
+                  if (m.statusCode != null) {
+                    const ok = m.statusCode < 400;
+                    const warn = m.statusCode >= 400 && m.statusCode < 500;
+                    chips.push({ label: String(m.statusCode), color: ok ? 'text-celadon bg-celadon/10' : warn ? 'text-amber-400 bg-amber-400/10' : 'text-red-400 bg-red-400/10' });
+                  }
+                  if (m.responseTime != null) {
+                    const fast = m.responseTime < 300, slow = m.responseTime > 1000;
+                    chips.push({ label: `${m.responseTime}ms`, color: fast ? 'text-celadon bg-celadon/10' : slow ? 'text-amber-400 bg-amber-400/10' : 'text-periwinkle bg-periwinkle/10' });
+                  }
+                  if (m.sslInfo?.daysLeft != null) {
+                    const urgent = m.sslInfo.daysLeft <= 7, soon = m.sslInfo.daysLeft <= 30;
+                    chips.push({ label: `SSL · ${m.sslInfo.daysLeft}${lang === 'fr' ? 'j' : 'd'}`, color: urgent ? 'text-red-400 bg-red-400/10' : soon ? 'text-amber-400 bg-amber-400/10' : 'text-celadon bg-celadon/10' });
+                  }
+                }
+                if (!chips.length) return null;
+                return (
+                  <div className="flex flex-wrap gap-1.5 pb-4 border-b border-border/50">
+                    {chips.map((c, i) => (
+                      <span key={i} className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium font-mono ${c.color}`}>{c.label}</span>
+                    ))}
+                  </div>
+                );
+              })()}
+
               {/* Uptime */}
               <div>
                 <div className="flex items-center justify-between mb-3">
@@ -263,10 +292,38 @@ export default function ServiceDetail({ monitor, onClose }) {
                     ))}
                   </div>
                 </div>
-                <div className="flex justify-around mb-3">
-                  <UptimeBadge value={hist?.uptime?.h24} label={t('modal.label24h')} />
-                  <UptimeBadge value={hist?.uptime?.d7}  label={t('modal.label7d')} />
-                </div>
+                {(() => {
+                  const h24 = hist?.uptime?.h24;
+                  const d7  = hist?.uptime?.d7;
+                  const trend = h24 != null && d7 != null ? Math.round((h24 - d7) * 10) / 10 : null;
+                  return (
+                    <div className="grid grid-cols-2 gap-2 mb-3">
+                      {[
+                        { value: h24, label: t('modal.label24h'), trendVal: trend },
+                        { value: d7,  label: t('modal.label7d'),  trendVal: trend != null ? -trend : null },
+                      ].map(({ value, label, trendVal }) => {
+                        if (value == null) return null;
+                        const color = value >= 99 ? 'text-celadon' : value >= 95 ? 'text-amber-400' : 'text-red-400';
+                        const trendColor = trendVal > 0.1 ? 'text-celadon' : trendVal < -0.1 ? 'text-red-400' : 'text-muted';
+                        const trendLabel = trendVal == null ? null
+                          : trendVal > 0.1  ? `+${trendVal}%`
+                          : trendVal < -0.1 ? `${trendVal}%`
+                          : null;
+                        return (
+                          <div key={label} className="bg-granite-3/60 border border-border/50 rounded-lg px-3 py-2.5 flex items-center justify-between">
+                            <div>
+                              <p className="text-xs text-muted mb-0.5">{label}</p>
+                              <p className={`text-lg font-bold ${color}`}>{value}%</p>
+                            </div>
+                            {trendLabel && (
+                              <span className={`text-xs font-mono font-semibold shrink-0 ${trendColor}`}>{trendLabel}</span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
                 {points.length >= 2 && <StatusTimeline points={points} period={period} lang={lang} />}
               </div>
 
@@ -295,22 +352,35 @@ export default function ServiceDetail({ monitor, onClose }) {
                         const label = isErr
                           ? (p.status === 'offline' ? 'offline' : 'timeout')
                           : String(code);
-                        const cls = isErr
+                        const badgeCls = isErr
                           ? 'bg-red-500/15 text-red-400 border-red-500/30'
                           : code >= 500 ? 'bg-red-500/15 text-red-400 border-red-500/30'
                           : code >= 400 ? 'bg-amber-400/15 text-amber-400 border-amber-400/30'
                           : code >= 300 ? 'bg-periwinkle/15 text-periwinkle border-periwinkle/30'
                           : 'bg-celadon/15 text-celadon border-celadon/30';
+                        const isOk = !isErr && code < 400;
+                        const rtColor = rt == null ? '' : rt < 300 ? 'text-celadon' : rt > 1000 ? 'text-amber-400' : 'text-muted/60';
+                        const rowBorderColor = isErr || (code != null && code >= 500)
+                          ? 'rgba(248,113,113,0.35)'
+                          : code != null && code >= 400
+                            ? 'rgba(251,191,36,0.35)'
+                            : 'rgba(52,211,153,0.25)';
+                        const rowBg = isErr || (code != null && code >= 500)
+                          ? 'rgba(248,113,113,0.04)'
+                          : code != null && code >= 400
+                            ? 'rgba(251,191,36,0.04)'
+                            : 'rgba(52,211,153,0.03)';
                         return (
-                          <div key={i} className="flex items-center gap-3 px-3 py-1.5 rounded-lg bg-surface text-xs">
-                            <span className={`font-mono font-bold px-1.5 py-0.5 rounded border text-xs shrink-0 ${cls}`}>
+                          <div key={i} className="flex items-center gap-3 px-3 py-1.5 text-xs"
+                            style={{ borderLeft: `2px solid ${rowBorderColor}`, background: rowBg, borderRadius: '0 6px 6px 0' }}>
+                            <span className={`font-mono font-bold px-1.5 py-0.5 rounded border text-xs shrink-0 ${badgeCls}`}>
                               {label}
                             </span>
                             <span className="text-muted flex-1">
                               {new Date(p.ts).toLocaleString(locale)}
                             </span>
                             {rt != null && (
-                              <span className="text-muted/60 shrink-0 font-mono">{rt}ms</span>
+                              <span className={`shrink-0 font-mono ${rtColor}`}>{rt}ms</span>
                             )}
                             {isErr && p.lastError && (
                               <span className="text-muted/50 shrink-0 truncate max-w-[120px]" title={p.lastError}>
@@ -326,16 +396,29 @@ export default function ServiceDetail({ monitor, onClose }) {
               })()}
 
               {/* Sparklines — one per metric (or fallback primary) */}
-              {graphs.map(g => (
-                <div key={g.key} className="pt-4 border-t border-border/50">
-                  <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">{g.label}</p>
-                  <Sparkline points={g.pts} color={sparkColor} height={110} showLabels incidents={incidents} annotations={annotations} maintenanceWindows={maintenanceWindows} changelogEntries={changelogEntries} />
-                  <div className="flex justify-between text-xs text-muted/50 mt-1">
-                    <span>{period === 24 ? '−24h' : `−${t('modal.period7d')}`}</span>
-                    <span>{t('modal.now')}</span>
+              {graphs.map(g => {
+                const vals = g.pts.map(p => p.value).filter(v => v != null);
+                const avg = vals.length ? Math.round(vals.reduce((s, v) => s + v, 0) / vals.length) : null;
+                const unit = g.unit ?? '';
+                const isRt = g.key === 'responseTime' || g.key === 'latency';
+                return (
+                  <div key={g.key} className="pt-4 border-t border-border/50">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-semibold text-muted uppercase tracking-wider">{g.label}</p>
+                      {avg != null && (
+                        <span className="text-xs font-mono text-periwinkle">
+                          {lang === 'fr' ? 'moy.' : 'avg'} {avg}{unit}
+                        </span>
+                      )}
+                    </div>
+                    <Sparkline points={g.pts} color={sparkColor} height={110} showLabels variant={isRt ? 'bar' : 'line'} incidents={incidents} annotations={annotations} maintenanceWindows={maintenanceWindows} changelogEntries={changelogEntries} />
+                    <div className="flex justify-between text-xs text-muted/50 mt-1">
+                      <span>{period === 24 ? '−24h' : `−${t('modal.period7d')}`}</span>
+                      <span>{t('modal.now')}</span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
 
               {graphs.length === 0 && hist !== null && !points.some(p => p.metrics?.statusCode != null) && (
                 <div className="text-center py-8">

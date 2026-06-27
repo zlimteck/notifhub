@@ -30,7 +30,7 @@ const formatVal = v => {
   return v.toFixed(1);
 };
 
-export default function Sparkline({ points = [], color = '#c9d7f8', height = 56, showLabels = false, incidents = [], annotations = [], maintenanceWindows = [], changelogEntries = [] }) {
+export default function Sparkline({ points = [], color = '#c9d7f8', height = 56, showLabels = false, variant = 'line', incidents = [], annotations = [], maintenanceWindows = [], changelogEntries = [] }) {
   const [tooltip, setTooltip] = useState(null);
   const [clTooltip, setClTooltip] = useState(null);
 
@@ -270,40 +270,65 @@ export default function Sparkline({ points = [], color = '#c9d7f8', height = 56,
           </g>
         ))}
 
-        {/* Area fill + smooth line per segment */}
-        {segments.map((seg, si) => {
-          const coords = seg.map(({ p, vi }) => [toX(vi), toY(p.value)]);
-          return (
-            <g key={si}>
-              <path d={smoothArea(coords, PAD_TOP + innerH)} fill={`url(#${gradId})`} />
-              <path d={smoothPath(coords)} fill="none" stroke={color}
-                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-            </g>
-          );
-        })}
+        {variant === 'bar' ? (
+          <>
+            {valid.map((p, vi) => {
+              const barW = Math.max(1, (innerW / valid.length) * 0.65);
+              const x    = toX(vi) - barW / 2;
+              const y    = toY(p.value);
+              const barH = PAD_TOP + innerH - y;
+              const isErr  = p.status === 'error' || p.status === 'offline';
+              const isWarn = p.status === 'warning';
+              const fill = isErr ? '#f87171' : isWarn ? '#fbbf24' : color;
+              const opacity = isErr || isWarn ? 0.85 : 0.7;
+              return (
+                <rect key={vi} x={x} y={y} width={barW} height={Math.max(barH, 1)}
+                  fill={fill} fillOpacity={opacity} rx="1.5" />
+              );
+            })}
+            {tooltip && (
+              <line x1={tooltip.x} y1={PAD_TOP} x2={tooltip.x} y2={PAD_TOP + innerH}
+                stroke="currentColor" strokeOpacity="0.25" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+            )}
+          </>
+        ) : (
+          <>
+            {/* Area fill + smooth line per segment */}
+            {segments.map((seg, si) => {
+              const coords = seg.map(({ p, vi }) => [toX(vi), toY(p.value)]);
+              return (
+                <g key={si}>
+                  <path d={smoothArea(coords, PAD_TOP + innerH)} fill={`url(#${gradId})`} />
+                  <path d={smoothPath(coords)} fill="none" stroke={color}
+                    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+                </g>
+              );
+            })}
 
-        {/* Dashed bridges through null gaps */}
-        {bridges.map((b, i) => (
-          <line key={i} x1={b.x1} y1={b.y1} x2={b.x2} y2={b.y2}
-            stroke={color} strokeWidth="1.5" strokeDasharray="4,4"
-            strokeOpacity="0.35" vectorEffect="non-scaling-stroke" />
-        ))}
+            {/* Dashed bridges through null gaps */}
+            {bridges.map((b, i) => (
+              <line key={i} x1={b.x1} y1={b.y1} x2={b.x2} y2={b.y2}
+                stroke={color} strokeWidth="1.5" strokeDasharray="4,4"
+                strokeOpacity="0.35" vectorEffect="non-scaling-stroke" />
+            ))}
 
-        {/* Error/warning dots */}
-        {errorCoords.map(([x, y, status], i) => (
-          <circle key={i} cx={x} cy={y} r="3"
-            fill={status === 'warning' ? '#fbbf24' : '#f87171'}
-            stroke="rgba(0,0,0,0.3)" strokeWidth="0.5" />
-        ))}
+            {/* Error/warning dots */}
+            {errorCoords.map(([x, y, status], i) => (
+              <circle key={i} cx={x} cy={y} r="3"
+                fill={status === 'warning' ? '#fbbf24' : '#f87171'}
+                stroke="rgba(0,0,0,0.3)" strokeWidth="0.5" />
+            ))}
 
-        {/* Hover crosshair + dot */}
-        {tooltip && (
-          <g>
-            <line x1={tooltip.x} y1={PAD_TOP} x2={tooltip.x} y2={PAD_TOP + innerH}
-              stroke="currentColor" strokeOpacity="0.2" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-            <circle cx={tooltip.x} cy={tooltip.y} r="3.5"
-              fill={color} stroke="rgba(0,0,0,0.4)" strokeWidth="1" />
-          </g>
+            {/* Hover crosshair + dot */}
+            {tooltip && (
+              <g>
+                <line x1={tooltip.x} y1={PAD_TOP} x2={tooltip.x} y2={PAD_TOP + innerH}
+                  stroke="currentColor" strokeOpacity="0.2" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+                <circle cx={tooltip.x} cy={tooltip.y} r="3.5"
+                  fill={color} stroke="rgba(0,0,0,0.4)" strokeWidth="1" />
+              </g>
+            )}
+          </>
         )}
       </svg>
     </div>

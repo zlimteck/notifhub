@@ -100,18 +100,31 @@ router.get('/', async (req, res) => {
     // Incidents summary
     const openIncidents = incidents.filter(i => !i.resolvedAt).length;
     const resolvedIncidents = incidents.filter(i => i.resolvedAt).length;
-    const resolved = incidents.filter(i => i.duration);
+    const resolved = incidents.filter(i => i.resolvedAt);
     const avgDuration = resolved.length
-      ? Math.round(resolved.reduce((s, i) => s + i.duration, 0) / resolved.length)
+      ? Math.round(resolved.reduce((s, i) => s + (i.duration ?? (new Date(i.resolvedAt) - new Date(i.startedAt))), 0) / resolved.length)
       : null;
 
     // MTTR = avgDuration (alias)
     const mttr = avgDuration;
 
-    // MTTD = mean time from startedAt to acknowledgedAt (for acknowledged incidents)
-    const acknowledged = incidents.filter(i => i.acknowledgedAt);
-    const mttd = acknowledged.length
-      ? Math.round(acknowledged.reduce((s, i) => s + (new Date(i.acknowledgedAt) - new Date(i.startedAt)), 0) / acknowledged.length)
+    // MTTN = mean time from incident startedAt to first alert notification for that monitor
+    const alertLogs = logs.filter(l => l.type === 'status_change' && ['error', 'warning'].includes(l.level));
+    const mttnValues = [];
+    for (const inc of incidents) {
+      const monitorIdStr = inc.monitorId?.toString();
+      if (!monitorIdStr || !inc.startedAt) continue;
+      const incStart = new Date(inc.startedAt).getTime();
+      const incEnd = inc.resolvedAt ? new Date(inc.resolvedAt).getTime() : Infinity;
+      const firstNotif = alertLogs
+        .filter(l => l.monitorId?.toString() === monitorIdStr &&
+                     new Date(l.createdAt).getTime() >= incStart &&
+                     new Date(l.createdAt).getTime() <= incEnd)
+        .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))[0];
+      if (firstNotif) mttnValues.push(new Date(firstNotif.createdAt).getTime() - incStart);
+    }
+    const mttn = mttnValues.length
+      ? Math.round(mttnValues.reduce((s, v) => s + v, 0) / mttnValues.length)
       : null;
 
     // Severity breakdown
@@ -126,7 +139,7 @@ router.get('/', async (req, res) => {
     for (const sev of ['P1','P2','P3','P4']) {
       const group = resolved.filter(i => (i.severity || 'P3') === sev);
       mttrBySeverity[sev] = group.length
-        ? Math.round(group.reduce((s, i) => s + i.duration, 0) / group.length)
+        ? Math.round(group.reduce((s, i) => s + (i.duration ?? (new Date(i.resolvedAt) - new Date(i.startedAt))), 0) / group.length)
         : null;
     }
 
@@ -143,13 +156,84 @@ router.get('/', async (req, res) => {
       if (l.level in logsByLevel) logsByLevel[l.level]++;
     }
 
+    // SSL info — all HTTP monitors with known SSL state, sorted by days left ascending
+    const sslExpiring = monitors
+      .filter(m => m.type === 'http' && m.metrics?.sslInfo?.daysLeft != null)
+      .map(m => ({
+        id: m._id,
+        name: m.name,
+        daysLeft: m.metrics.sslInfo.daysLeft,
+        expiresAt: m.metrics.sslInfo.expiresAt ?? null,
+        issuer: m.metrics.sslInfo.issuer ?? null,
+      }))
+      .sort((a, b) => a.daysLeft - b.daysLeft);
+
+    // Most unstable monitors (most incidents in 30d)
+    const incidentCountByMonitor = {};
+    for (const inc of incidents) {
+      const id = inc.monitorId?.toString();
+      if (id) incidentCountByMonitor[id] = (incidentCountByMonitor[id] || 0) + 1;
+    }
+    const monitorMap = Object.fromEntries(monitors.map(m => [m._id.toString(), m.name]));
+    const mostUnstable = Object.entries(incidentCountByMonitor)
+      .filter(([id]) => monitorMap[id])
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([id, count]) => ({ id, name: monitorMap[id], count }));
+
+    // Incident duration distribution
+    const incidentDurationDist = { short: 0, medium: 0, long: 0, critical: 0 };
+    for (const inc of resolved) {
+      const dur = inc.duration ?? (new Date(inc.resolvedAt) - new Date(inc.startedAt));
+      if (dur < 5 * 60000)          incidentDurationDist.short++;
+      else if (dur < 30 * 60000)    incidentDurationDist.medium++;
+      else if (dur < 2 * 3600000)   incidentDurationDist.long++;
+      else                           incidentDurationDist.critical++;
+    }
+
+    // Response time percentiles per HTTP monitor (from 30d snapshots)
+    function percentile(arr, p) {
+      if (!arr.length) return null;
+      const sorted = [...arr].sort((a, b) => a - b);
+      return sorted[Math.max(0, Math.ceil((p / 100) * sorted.length) - 1)];
+    }
+    const rtByMonitor = {};
+    for (const s of snapshots) {
+      if (s.type === 'http' && s.value != null) {
+        const id = s.monitorId.toString();
+        if (!rtByMonitor[id]) rtByMonitor[id] = [];
+        rtByMonitor[id].push(s.value);
+      }
+    }
+    const responseTimePercentiles = Object.entries(rtByMonitor)
+      .filter(([id]) => monitorMap[id])
+      .map(([id, vals]) => ({
+        id,
+        name: monitorMap[id],
+        p50: percentile(vals, 50),
+        p95: percentile(vals, 95),
+        p99: percentile(vals, 99),
+        count: vals.length,
+      }))
+      .sort((a, b) => (b.p95 ?? 0) - (a.p95 ?? 0));
+
+    // Notification delivery rate
+    const notifDeliveryRate = logs.length > 0
+      ? Math.round((logs.filter(l => l.sent).length / logs.length) * 100)
+      : null;
+
     res.json({
       monitors: { total, enabled, online, alerting },
-      incidents: { open: openIncidents, resolved: resolvedIncidents, avgDuration, mttr, mttd, severityCount, mttrBySeverity },
+      incidents: { open: openIncidents, resolved: resolvedIncidents, avgDuration, mttr, mttn, severityCount, mttrBySeverity },
       incidentsByDay,
       uptimeByMonitor,
       logsByLevel,
       maintenance: { totalWindows: totalMwWindows, totalMinutes: totalMwMinutes },
+      sslExpiring,
+      mostUnstable,
+      incidentDurationDist,
+      responseTimePercentiles,
+      notifDeliveryRate,
     });
   } catch (err) {
     console.error('[Stats]', err.message);

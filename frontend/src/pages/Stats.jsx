@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { stats as api, incidents as incidentsApi } from '../api';
 import { useLang } from '../context/LangContext';
-import { Radio, AlertTriangle, CheckCircle, Clock, Timer, Eye, Bell, Wrench } from 'lucide-react';
+import { Radio, AlertTriangle, CheckCircle, Clock, Timer, Eye, Bell, Wrench, ShieldAlert } from 'lucide-react';
 
 function duration(ms) {
   if (!ms) return '—';
@@ -32,7 +32,7 @@ function TrendBadge({ trend }) {
 }
 
 function SlaBadge({ slaMet, slaTarget }) {
-  if (slaMet === null || slaTarget == null) return <span className="hidden sm:block w-20 shrink-0" />;
+  if (slaMet === null || slaTarget == null) return null;
   return slaMet
     ? <span className="hidden sm:block text-xs font-mono text-celadon w-20 text-right shrink-0" title={`SLA ${slaTarget}%`}>✓ {slaTarget}%</span>
     : <span className="hidden sm:block text-xs font-mono text-red-400 w-20 text-right shrink-0" title={`SLA ${slaTarget}%`}>✗ {slaTarget}%</span>;
@@ -220,7 +220,8 @@ export default function Stats() {
   const past30 = new Date(Date.now() - 30 * 24 * 3600 * 1000);
   const heatmapIncidents = allIncidents.filter(i => new Date(i.startedAt) >= past30);
 
-  const { monitors, incidents, incidentsByDay, uptimeByMonitor, logsByLevel, maintenance } = data;
+  const { monitors, incidents, incidentsByDay, uptimeByMonitor, logsByLevel, maintenance,
+          sslExpiring, mostUnstable, incidentDurationDist, responseTimePercentiles, notifDeliveryRate } = data;
   const totalSev    = Object.values(incidents.severityCount || {}).reduce((s, v) => s + v, 0);
   const totalNotifs = Object.values(logsByLevel).reduce((s, v) => s + v, 0);
 
@@ -253,6 +254,78 @@ export default function Stats() {
           </div>
         )}
       </div>
+
+      {/* SSL certificates */}
+      {sslExpiring && sslExpiring.length > 0 && (
+        <div>
+          <h2 className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">{t('stats.sslExpiryTitle')}</h2>
+          <div className="card px-4 divide-y divide-border">
+            {sslExpiring.map(m => {
+              const urgent = m.daysLeft <= 0;
+              const warn   = m.daysLeft <= 7;
+              const soon   = m.daysLeft <= 30;
+              const color     = urgent ? 'text-red-400'  : warn ? 'text-amber-400' : soon ? 'text-thistle' : 'text-celadon';
+              const barColor  = urgent ? '#f87171'        : warn ? '#fbbf24'        : soon ? '#c4b5fd'      : '#34d399';
+              const pct       = urgent ? 0 : Math.min(100, Math.round((m.daysLeft / 90) * 100));
+              const expDate = m.expiresAt
+                ? new Date(m.expiresAt).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                : null;
+              return (
+                <div key={m.id} className="flex items-center gap-3 py-2.5">
+                  <ShieldAlert size={14} className={`shrink-0 ${color}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-thistle truncate">{m.name}</p>
+                    {expDate && <p className="text-xs text-muted">{expDate}</p>}
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="w-32 h-2 bg-granite-3 rounded-full overflow-hidden shrink-0">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{ width: `${pct}%`, backgroundColor: barColor, opacity: 0.85 }}
+                      />
+                    </div>
+                    <span className="text-xs font-mono font-semibold w-14 text-right" style={{ color: barColor }}>
+                      {m.daysLeft <= 0 ? (lang === 'fr' ? 'Expiré' : 'Expired') : `${m.daysLeft}j`}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Response time percentiles */}
+      {responseTimePercentiles && responseTimePercentiles.length > 0 && (
+        <div>
+          <h2 className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">{t('stats.responseTimeTitle')}</h2>
+          <div className="card px-4 py-3 overflow-x-auto">
+            <table className="w-full text-xs min-w-[320px]">
+              <thead>
+                <tr className="text-muted">
+                  <th className="text-left font-normal pb-2 w-full">{lang === 'fr' ? 'Service' : 'Service'}</th>
+                  <th className="text-right font-semibold pb-2 pl-4 shrink-0">P50</th>
+                  <th className="text-right font-semibold pb-2 pl-4 shrink-0">P95</th>
+                  <th className="text-right font-semibold pb-2 pl-4 shrink-0">P99</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {responseTimePercentiles.map(m => {
+                  const p99Color = m.p99 > 2000 ? 'text-red-400' : m.p99 > 1000 ? 'text-amber-400' : 'text-celadon';
+                  return (
+                    <tr key={m.id}>
+                      <td className="py-1.5 text-thistle truncate max-w-[140px]">{m.name}</td>
+                      <td className="py-1.5 pl-4 text-right font-mono text-muted">{m.p50 != null ? `${m.p50}ms` : '—'}</td>
+                      <td className="py-1.5 pl-4 text-right font-mono text-muted">{m.p95 != null ? `${m.p95}ms` : '—'}</td>
+                      <td className={`py-1.5 pl-4 text-right font-mono font-semibold ${p99Color}`}>{m.p99 != null ? `${m.p99}ms` : '—'}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Maintenance */}
       {maintenance && maintenance.totalWindows > 0 && (
@@ -292,7 +365,7 @@ export default function Stats() {
           <StatCard icon={AlertTriangle} label={t('stats.open')}     value={incidents.open}     color={incidents.open > 0 ? 'text-red-400' : 'text-muted'} />
           <StatCard icon={CheckCircle}   label={t('stats.resolved')} value={incidents.resolved} color="text-celadon" />
           <StatCard icon={Timer}         label="MTTR"                value={duration(incidents.mttr)} />
-          <StatCard icon={Eye}           label={t('stats.mttd')}     value={duration(incidents.mttd)} color="text-periwinkle" />
+          <StatCard icon={Eye}           label={t('stats.mttn')}     value={duration(incidents.mttn)} color="text-periwinkle" />
         </div>
 
         {totalSev > 0 && (
@@ -323,6 +396,56 @@ export default function Stats() {
         )}
       </div>
 
+      {/* Most Unstable */}
+      {mostUnstable && mostUnstable.length > 0 && (
+        <div>
+          <h2 className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">{t('stats.mostUnstableTitle')}</h2>
+          <div className="card px-4 py-3 space-y-2">
+            {(() => {
+              const max = mostUnstable[0]?.count || 1;
+              return mostUnstable.map(m => (
+                <div key={m.id} className="flex items-center gap-3">
+                  <span className="text-sm text-thistle truncate w-36 min-w-0 shrink-0">{m.name}</span>
+                  <div className="flex-1 h-2 bg-granite-3 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full bg-red-400/60" style={{ width: `${(m.count / max) * 100}%` }} />
+                  </div>
+                  <span className="text-xs font-mono text-muted shrink-0 text-right">
+                    {m.count} incident{m.count > 1 ? 's' : ''}
+                  </span>
+                </div>
+              ));
+            })()}
+          </div>
+        </div>
+      )}
+
+      {/* Incident duration distribution */}
+      {incidentDurationDist && incidents.resolved > 0 && (
+        <div>
+          <h2 className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">{t('stats.incidentDurationTitle')}</h2>
+          <div className="card px-4 py-3 space-y-2">
+            {[
+              { key: 'short',    label: t('stats.durationShort'),    color: 'bg-celadon' },
+              { key: 'medium',   label: t('stats.durationMedium'),   color: 'bg-amber-400' },
+              { key: 'long',     label: t('stats.durationLong'),     color: 'bg-red-400/70' },
+              { key: 'critical', label: t('stats.durationCritical'), color: 'bg-red-600' },
+            ].map(({ key, label, color }) => {
+              const count = incidentDurationDist[key] || 0;
+              const total = incidents.resolved;
+              return (
+                <div key={key} className="flex items-center gap-3">
+                  <span className="text-xs text-muted w-28 shrink-0">{label}</span>
+                  <div className="flex-1 h-1.5 bg-granite-3 rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full ${color}`} style={{ width: total > 0 ? `${(count / total) * 100}%` : '0%' }} />
+                  </div>
+                  <span className="text-xs font-mono text-muted w-6 text-right shrink-0">{count}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Incidents per day */}
       {incidentsByDay && (
         <div>
@@ -345,7 +468,14 @@ export default function Stats() {
         <div className="card px-4 py-3 space-y-2">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted">{t('stats.total')}</span>
-            <span className="font-bold text-thistle">{totalNotifs}</span>
+            <div className="flex items-center gap-3">
+              {notifDeliveryRate != null && (
+                <span className={`text-xs font-mono ${notifDeliveryRate >= 95 ? 'text-celadon' : notifDeliveryRate >= 80 ? 'text-amber-400' : 'text-red-400'}`}>
+                  {t('stats.deliveryRate')} {notifDeliveryRate}%
+                </span>
+              )}
+              <span className="font-bold text-thistle">{totalNotifs}</span>
+            </div>
           </div>
           {Object.entries(logsByLevel).map(([level, count]) => (
             <div key={level} className="flex items-center gap-3">
